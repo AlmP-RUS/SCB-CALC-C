@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <math.h>
-#include<windows.h>
+#include <windows.h>
 
 float *ParsedData;
 int *EndOfEachTrack;
@@ -97,13 +97,16 @@ short int ReadTracksFile(char path[]) {
         EndOfEachTrack[i] += EndOfEachTrack[i - 1];
     }
 
+
     //float *ParsedData;
-    ParsedData = (float*) malloc(NumbersOfTracks * EndOfEachTrack[NumbersOfTracks] * 3 * sizeof(float));
+    ParsedData = (float*) malloc(NumbersOfTracks * EndOfEachTrack[NumbersOfTracks - 1] * 3 * sizeof(float));
     printf("ReadTracksFile: Memory Allocated\n");
 
     /*for (int i = 0; i < NumbersOfTracks; i++) {
         printf("DEBUG 2: %i\n", EndOfEachTrack[i]);
     }*/
+
+    //printf("Len of Arr%li\n ", NumbersOfTracks * EndOfEachTrack[NumbersOfTracks]);
 
     int k = 0;
     int i = 0;
@@ -115,6 +118,8 @@ short int ReadTracksFile(char path[]) {
     while (!feof(TracksFile)) {
         kprev = k;
         ch = fgetc(TracksFile);
+        //printf("%c - %i\n",ch,(int)ch);
+        //Sleep(25);
         if (ch == ']') k = 0;
         if (ch == '\n') k = 0;
         if (ch == '"') k = 1;
@@ -150,8 +155,8 @@ short int ReadTracksFile(char path[]) {
             z = 0;
             /*printf("kprev >= 2 & k < 2\n");
             printf("n - %f\n", n);
-            printf("nd- %f\n", nd);
-            printf("pd- %f\n", ParsedData[i]);*/
+            printf("nd- %f\n", nd);*/
+            //printf("pd- %f\n", ParsedData[i]);
             i++;
             n = 0;
             nd = 0;
@@ -186,6 +191,7 @@ float GetParsedData(int n1, int n2, int n3) {
     }
 }
 
+//↑ Reading Tracks File
 
 
 
@@ -211,7 +217,10 @@ float st_B_center[3];
 int A_eki[2];
 int B_eki[2];
 
-void Profile_Think() {
+
+float** TrackProfile;
+long LenByTracks = 0;
+int Profile_Think() {
 
     float min = pow(10, 10);
     for (int i = 0; i < NumbersOfTracks; i++) {
@@ -235,8 +244,110 @@ void Profile_Think() {
             }
         }
     }
+    /*
     printf("%i  ",A_eki[0]);
     printf("%i\n",A_eki[1]);
     printf("%i  ",B_eki[0]);
     printf("%i\n",B_eki[1]);
+    */
+    if (A_eki[0] == B_eki[0]) {
+        TrackProfile = (float**) malloc((B_eki[1] - A_eki[1]) * sizeof(float*));
+        for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+            TrackProfile[i] = (float*) malloc(3 * sizeof(float));
+            TrackProfile[i][0] = sqrt(pow((GetParsedData(A_eki[0], A_eki[1] + i, 0) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 0)), 2) + pow((GetParsedData(A_eki[0], A_eki[1] + i, 1) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 1)), 2) + pow((GetParsedData(A_eki[0], A_eki[1] + i, 2) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 2)), 2));
+            TrackProfile[i][1] = (GetParsedData(A_eki[0], A_eki[1] + i + 1, 2) - GetParsedData(A_eki[0], A_eki[1] + i, 2)) / sqrt(pow(GetParsedData(A_eki[0], A_eki[1] + i, 0) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 0), 2) + pow(GetParsedData(A_eki[0], A_eki[1] + i, 1) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 1), 2));
+            TrackProfile[i][2] = calculateCircleRadius(GetParsedData(A_eki[0], A_eki[1] + i - 1, 0), GetParsedData(A_eki[0], A_eki[1] + i - 1, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i + 1, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), 0);
+            
+            TrackProfile[i][1] = round(TrackProfile[i][1]*200)*5;
+            if (TrackProfile[i][1] == -0) TrackProfile[i][1] = 0;
+            if (TrackProfile[i][2] == -0) TrackProfile[i][2] = 0;
+	        if (abs(TrackProfile[i][2]) > 15000) TrackProfile[i][2] = 0;
+	        TrackProfile[i][2] *= 0.01905; //i[2] = Math.round(i[2]*0.01905/5)*5
+            LenByTracks += TrackProfile[i][0];
+	        TrackProfile[i][0] *= 0.01905;
+        }
+        LenByTracks *= 0.01905;
+
+        int slopeFilter = 1;
+        if (slopeFilter == 1) {
+            for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+                float mp = 0;
+                int j = i;
+                while (TrackProfile[i][1] != 0) {
+                    mp += TrackProfile[j][1];
+                    j += 1;
+                    if (j >= B_eki[1] - A_eki[1]) {
+                        j-=1;
+                        break;
+                    }
+                    if (TrackProfile[i][1]/abs(TrackProfile[i][1]) != TrackProfile[j][1]/abs(TrackProfile[j][1])) {
+                        j-=1;
+                        break;
+                    }
+                    if (TrackProfile[j][1] == 0) {
+                        j-=1;
+                        break;
+                    }
+                }
+                mp /= j-i+1;
+                while(1) {
+                    TrackProfile[i][1] = round(mp);
+                    if (i == j) break;
+                    i++;
+                } 
+            }
+        }
+
+        for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+            float mp = 0;
+            int j = i;
+            while (TrackProfile[i][2] != 0) {
+                mp += TrackProfile[j][2];
+                j += 1;
+                if (j >= B_eki[1] - A_eki[1]) {
+                    j-=1;
+                    break;
+                }
+                if (TrackProfile[j][2] == 0) {
+                    j-=1;
+                    break;
+                }
+                if (TrackProfile[i][2]/abs(TrackProfile[i][2]) != TrackProfile[j][2]/abs(TrackProfile[j][2])) {
+                    j-=1;
+                    break;
+                }
+            }
+            mp /= j-i+1;
+            while(1) {
+                TrackProfile[i][2] = round(mp);
+                if (i == j) break;
+                i++;
+            } 
+        }
+    } else printf("Profile_Think: st.A & st.B are not at the same track!\n");
+}
+
+float getProfileByTracks(float x) {
+	long len = 0;
+    float a1 = 0;
+    float a2 = 0;
+    for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+		len += TrackProfile[i][0];
+		if (len-TrackProfile[i][0]/2 >= x & TrackProfile[i][1]!=NAN) {
+			a1 = TrackProfile[i][1];
+            break;
+		}
+	};
+    len = 0;
+    for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+		len += TrackProfile[i][0];
+		if (len >= x & TrackProfile[i][2]!=NAN) {
+			a2 = TrackProfile[i][2];
+            break;
+		}
+	}
+    float arr[2];
+    arr[1] = a1;
+    arr[2] = a2;
+	return a2;
 }
