@@ -131,15 +131,15 @@ float GetParsedData(int n1, int n2, int n3) {
 
 //↑ Reading Tracks File
 
-float calculateCircleRadius(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) { //ето написал чатгпт
-    float a = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
-    float b = sqrt(pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2));
-    float c = sqrt(pow(x1 - x3, 2) + pow(y1 - y3, 2) + pow(z1 - z3, 2));
+double calculateCircleRadius(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) { //ето написал чатгпт
+    double a = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
+    double b = sqrt(pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2));
+    double c = sqrt(pow(x1 - x3, 2) + pow(y1 - y3, 2) + pow(z1 - z3, 2));
   
-    float s = (a + b + c) / 2;
-    float radius = (a * b * c) / (4 * sqrt(s * (s - a) * (s - b) * (s - c)));
+    double s = (a + b + c) / 2;
+    double radius = (a * b * c) / (4 * sqrt(s * (s - a) * (s - b) * (s - c)));
 
-    float crossProduct = ((x2 - x1) * (y3 - y1)) - ((x3 - x1) * (y2 - y1));
+    double crossProduct = ((x2 - x1) * (y3 - y1)) - ((x3 - x1) * (y2 - y1));
   
     return radius * crossProduct / abs(crossProduct);
 }
@@ -151,7 +151,7 @@ int A_eki[2];
 int B_eki[2];
 
 
-float** TrackProfile;
+double** TrackProfile;
 long LenByTracks = 0;
 int Profile_Think() {
 
@@ -179,15 +179,15 @@ int Profile_Think() {
     }
 
     if (A_eki[0] == B_eki[0]) {
-        TrackProfile = (float**) malloc((B_eki[1] - A_eki[1]) * sizeof(float*));
+        TrackProfile = (double**) malloc((B_eki[1] - A_eki[1]) * sizeof(double*));
         for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
-            TrackProfile[i] = (float*) malloc(3 * sizeof(float));
+            TrackProfile[i] = (double*) malloc(3 * sizeof(double));
             TrackProfile[i][0] = sqrt(pow((GetParsedData(A_eki[0], A_eki[1] + i, 0) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 0)), 2) + pow((GetParsedData(A_eki[0], A_eki[1] + i, 1) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 1)), 2) + pow((GetParsedData(A_eki[0], A_eki[1] + i, 2) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 2)), 2));
             TrackProfile[i][1] = (GetParsedData(A_eki[0], A_eki[1] + i + 1, 2) - GetParsedData(A_eki[0], A_eki[1] + i, 2)) / sqrt(pow(GetParsedData(A_eki[0], A_eki[1] + i, 0) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 0), 2) + pow(GetParsedData(A_eki[0], A_eki[1] + i, 1) - GetParsedData(A_eki[0], A_eki[1] + i + 1, 1), 2));
-            TrackProfile[i][2] = calculateCircleRadius(GetParsedData(A_eki[0], A_eki[1] + i - 1, 0), GetParsedData(A_eki[0], A_eki[1] + i - 1, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i + 1, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), 0);
+            TrackProfile[i][2] = calculateCircleRadius(GetParsedData(A_eki[0], A_eki[1] + i - 1, 0), GetParsedData(A_eki[0], A_eki[1] + i - 1, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), 0, GetParsedData(A_eki[0], A_eki[1] + i + 1, 0), GetParsedData(A_eki[0], A_eki[1] + i + 1, 1), 0);
             
             TrackProfile[i][1] = round(TrackProfile[i][1]*200)*5;
-            if (TrackProfile[i][1] == -0) TrackProfile[i][1] = 0;
+            if (TrackProfile[i][1] == -0) TrackProfile[i][1] = 0; //Костыль из JS, тут вроде тоже нужно
             if (TrackProfile[i][2] == -0) TrackProfile[i][2] = 0;
 	        if (abs(TrackProfile[i][2]) > 15000) TrackProfile[i][2] = 0;
 	        TrackProfile[i][2] *= 0.01905;
@@ -196,10 +196,13 @@ int Profile_Think() {
         }
         LenByTracks *= 0.01905;
 
-        int slopeFilter = 1;
+        //↑ Все работает
+        //↓ Еще не проверено
+
+        int slopeFilter = 0;
         if (slopeFilter == 1) {
             for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
-                float mp = 0;
+                double mp = 0;
                 int j = i;
                 while (TrackProfile[i][1] != 0) {
                     mp += TrackProfile[j][1];
@@ -227,9 +230,10 @@ int Profile_Think() {
         }
 
         for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
-            float mp = 0;
+            long mp = 0;
             int j = i;
             while (TrackProfile[i][2] != 0) {
+                printf("DEBUG: I = %i, J = %i\n", i, j);
                 mp += TrackProfile[j][2];
                 j += 1;
                 if (j >= B_eki[1] - A_eki[1]) {
@@ -240,7 +244,7 @@ int Profile_Think() {
                     j-=1;
                     break;
                 }
-                if (TrackProfile[i][2]/abs(TrackProfile[i][2]) != TrackProfile[j][2]/abs(TrackProfile[j][2])) {
+                if ((int)TrackProfile[i][2]/abs(TrackProfile[i][2]) != (int)TrackProfile[j][2]/abs(TrackProfile[j][2])) {
                     j-=1;
                     break;
                 }
@@ -252,6 +256,7 @@ int Profile_Think() {
                 i++;
             } 
         }
+
         free(ParsedData);
         free(EndOfEachTrack);
         free(LenOfTracks);
@@ -283,7 +288,7 @@ float *getProfileByTracks(float x) {
 		}
 	}
 
-    static float arr[2];// = {a1, a2};
+    static float arr[2];
     arr[0] = a1;
     arr[1] = a2;
 	return arr;

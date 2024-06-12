@@ -44,9 +44,9 @@ void Interface() {
 int slopeFilter;
 
 int main() {
-    Interface();
+    //Interface();
     slopeFilter = 1;
-    //ReadTracksFile("E:/VSCode/Schitalochka C/track_gm_mus_neoorange_e.txt");
+    ReadTracksFile("E:/VSCode/Schitalochka C/track_gm_mus_neoorange_e.txt");
 
     //for (int i = 0; i < NumbersOfTracks; i++) printf("%i\n",LenOfTracks[i]);
 
@@ -59,10 +59,13 @@ int main() {
     Profile_Think();
 
 
-    for (int i = 0; i < LenByTracks; i++) {
+    /*for (int i = 0; i < LenByTracks; i++) {
         float *arr = getProfileByTracks(i);
         printf("i=%i: %f, %f\n", i, arr[0], arr[1]);
         free(arr);
+    }*/
+    for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
+        printf("i=%i: %f, %f\n", i, TrackProfile[i][1], TrackProfile[i][2]);
     }
 
     getch();
