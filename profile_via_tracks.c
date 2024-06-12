@@ -14,12 +14,11 @@ short int ReadTracksFile(char path[]) {
     if (TracksFile != NULL) {
         printf("ReadTracksFile: File Opened Successfully\n");
     } else {
-        printf("ReadTracksFile: Can't Find Tracks File\n");
+        printf("ReadTracksFile: Can't Find Tracks File\n\n");
         return -1;
     }
 
     char ch;
-    //short int NumbersOfTracks = -2;
     NumbersOfTracks = -2;
     short int c = 0;
     while (!feof(TracksFile)) {
@@ -34,42 +33,8 @@ short int ReadTracksFile(char path[]) {
     c /= 2;
     rewind(TracksFile);
     printf("ReadTracksFile: Tracks File Includes %i Tracks\n", NumbersOfTracks);
-    /*
-    int EndOfEachTrack;
-    int i,j,k;
-    float*** ParsedData = (float***)malloc(NumbersOfTracks*sizeof(float**));
-    int qweprev = 0;
-    int qwe = 0;
-    for (i = 0; i < NumbersOfTracks; i++) {
-        EndOfEachTrack = -2;
-        while ((qwe != 1 | qweprev != 2)) {
-            qweprev = qwe;
-            ch = fgetc(TracksFile);
-            if (ch == ']') qwe--;
-            if (ch == '[') qwe++;
-            if (ch == '\n') EndOfEachTrack++;
-        }
-        qweprev = qwe;
-        ParsedData[i] = (float**) malloc(EndOfEachTrack*sizeof(float*));
-        for (j = 0; j < EndOfEachTrack; j++) {
-            ParsedData[i][j] = (float*)malloc(3*sizeof(float));
-        }
-        //printf("DEBUG: %i\n", EndOfEachTrack);
-        //ParsedData[i][0][0] = EndOfEachTrack;
-    }
-    rewind(TracksFile);
-    printf("ReadTracksFile: Memory Allocated\n");
 
-    for (i = 0; i < NumbersOfTracks; i++) {
-        ParsedData[i][0][0] = i;
-    }
 
-    for (i = 0; i < NumbersOfTracks; i++) {
-        printf("DEBUG 2: %i\n",  ParsedData[i][0][0]);
-    }
-    */
-
-    //int *EndOfEachTrack;
     EndOfEachTrack = (int*) malloc(NumbersOfTracks * sizeof(int));
 
     int qweprev = 0;
@@ -97,16 +62,9 @@ short int ReadTracksFile(char path[]) {
         EndOfEachTrack[i] += EndOfEachTrack[i - 1];
     }
 
-
-    //float *ParsedData;
-    ParsedData = (float*) malloc(NumbersOfTracks * EndOfEachTrack[NumbersOfTracks - 1] * 3 * sizeof(float));
+    ParsedData = (float*) malloc(NumbersOfTracks * EndOfEachTrack[NumbersOfTracks - 1] * 3 * sizeof(float)); //First Critical Fug
     printf("ReadTracksFile: Memory Allocated\n");
 
-    /*for (int i = 0; i < NumbersOfTracks; i++) {
-        printf("DEBUG 2: %i\n", EndOfEachTrack[i]);
-    }*/
-
-    //printf("Len of Arr%li\n ", NumbersOfTracks * EndOfEachTrack[NumbersOfTracks]);
 
     int k = 0;
     int i = 0;
@@ -118,8 +76,6 @@ short int ReadTracksFile(char path[]) {
     while (!feof(TracksFile)) {
         kprev = k;
         ch = fgetc(TracksFile);
-        //printf("%c - %i\n",ch,(int)ch);
-        //Sleep(25);
         if (ch == ']') k = 0;
         if (ch == '\n') k = 0;
         if (ch == '"') k = 1;
@@ -134,14 +90,9 @@ short int ReadTracksFile(char path[]) {
             } else {
                 n *= 10;
                 n += (float)(ch - '0');
-                //printf("k == 2 & kprev == 2\n");
-                //printf("ch - %c\n", ch);
-                //printf("n  - %f\n", n);
-                //Sleep(1000);
             }
         }
         if (k == 3 & kprev == 3) {
-            //n += (int)(ch - '0') / ((k - 2) * 10.0);
             nd *= 10;
             nd += (float)(ch - '0');
             z++;
@@ -153,26 +104,13 @@ short int ReadTracksFile(char path[]) {
                 ParsedData[i] = (n + nd / pow(10,z)) * minus;
             }
             z = 0;
-            /*printf("kprev >= 2 & k < 2\n");
-            printf("n - %f\n", n);
-            printf("nd- %f\n", nd);*/
-            //printf("pd- %f\n", ParsedData[i]);
             i++;
             n = 0;
             nd = 0;
             minus = 1;
-            //Sleep(2000);
         }
-        //Sleep(1000);
     }
-    printf("ReadTracksFile: File Read To Array\n");
-
-    /*for (int j = 0; j < 27; j++) {
-        printf("DEBUG 3: %f\n", ParsedData[j]);
-        //Sleep(0);
-    }*/
-
-    //printf("%f", ParsedData[0]);
+    printf("ReadTracksFile: File Read To RAM\n\n");
 
     fclose(TracksFile);
     return(0);
@@ -186,17 +124,12 @@ short int ReadTracksFile(char path[]) {
 float GetParsedData(int n1, int n2, int n3) {
     if (n1 == 0) {
         return ParsedData[n2 * 3 + n3];
-    }else {
+    } else {
         return ParsedData[EndOfEachTrack[n1 - 1] * 3 + n2 * 3 + n3];
     }
 }
 
 //↑ Reading Tracks File
-
-
-
-
-
 
 float calculateCircleRadius(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) { //ето написал чатгпт
     float a = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
@@ -244,12 +177,7 @@ int Profile_Think() {
             }
         }
     }
-    /*
-    printf("%i  ",A_eki[0]);
-    printf("%i\n",A_eki[1]);
-    printf("%i  ",B_eki[0]);
-    printf("%i\n",B_eki[1]);
-    */
+
     if (A_eki[0] == B_eki[0]) {
         TrackProfile = (float**) malloc((B_eki[1] - A_eki[1]) * sizeof(float*));
         for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
@@ -262,7 +190,7 @@ int Profile_Think() {
             if (TrackProfile[i][1] == -0) TrackProfile[i][1] = 0;
             if (TrackProfile[i][2] == -0) TrackProfile[i][2] = 0;
 	        if (abs(TrackProfile[i][2]) > 15000) TrackProfile[i][2] = 0;
-	        TrackProfile[i][2] *= 0.01905; //i[2] = Math.round(i[2]*0.01905/5)*5
+	        TrackProfile[i][2] *= 0.01905;
             LenByTracks += TrackProfile[i][0];
 	        TrackProfile[i][0] *= 0.01905;
         }
@@ -324,10 +252,18 @@ int Profile_Think() {
                 i++;
             } 
         }
-    } else printf("Profile_Think: st.A & st.B are not at the same track!\n");
+        free(ParsedData);
+        free(EndOfEachTrack);
+        free(LenOfTracks);
+        printf("Profile_Think: Received Date Is Processed\n\n");
+        return 0;
+    } else {
+        printf("Profile_Think: st.A & st.B are not at the same track!\n\n");
+        return -1;
+    }
 }
 
-float getProfileByTracks(float x) {
+float *getProfileByTracks(float x) {
 	long len = 0;
     float a1 = 0;
     float a2 = 0;
@@ -341,13 +277,14 @@ float getProfileByTracks(float x) {
     len = 0;
     for (int i = 0; i < B_eki[1] - A_eki[1]; i++) {
 		len += TrackProfile[i][0];
-		if (len >= x & TrackProfile[i][2]!=NAN) {
-			a2 = TrackProfile[i][2];
+        if (len >= x) {
+            if (isfinite(TrackProfile[i][2])) a2 = TrackProfile[i][2];
             break;
 		}
 	}
-    float arr[2];
-    arr[1] = a1;
-    arr[2] = a2;
-	return a2;
+
+    static float arr[2];// = {a1, a2};
+    arr[0] = a1;
+    arr[1] = a2;
+	return arr;
 }
