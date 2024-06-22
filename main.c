@@ -9,7 +9,7 @@
 #include <SDL_ttf.h>
 
 int canvas_window_is_running;
-struct DMStruckt {
+struct DMStruct {
     char st_A_Name[51];
     char st_B_Name[51];
     float st_A_center[3];
@@ -23,6 +23,15 @@ struct DMStruckt {
     int** mode2;
     int mode_len;
     int mode2_len;
+};
+struct SignalsStruct {
+    int signals_len;
+    int customNum_len;
+    float**** signals;
+    int** customNum;
+    int FackMethod;
+    int CalcType;
+    int NumerationStart;
 };
 
 float spd_heigh = 37.5;
@@ -137,7 +146,8 @@ int CreateWorkspace(char path[]) {
     fclose(info);
 }
 
-struct DMStruckt SectionData;
+struct DMStruct SectionDMData;
+struct SignalsStruct SectionSignalsData;
 int mode_len;
 int mode2_len;
 int ReadSectionDMFile(char path[]) {
@@ -153,7 +163,6 @@ int ReadSectionDMFile(char path[]) {
             fprintf(SectionFile, "\"St. A\"; #\"st_A_Name\";\n\"St. B\"; #\"st_B_Name\";\n\n\"0 0 0\";  #\"st_A_center\";\n\"0 0 0\"; #\"st_B_center\";\n\n\"90\";    #\"interval\";\n\"30\";    #\"stationWait\";\n\"57.36\"; #\"st_len\";\n\n\"1\"; #\"Coeff\"; #usually 1 or 1.5\n\"1\"; #\"SlopeFilter\"; #0 or 1\n\nmode = [\n    [150, 0]\n];\n\nmode2 = [\n    [150,0]\n];");
         }
         else if (ch != '0') goto _ReadSectionDMFileScanagain;
-        fclose(SectionFile);
         printf("\n");
         return -1;
     }
@@ -195,19 +204,19 @@ int ReadSectionDMFile(char path[]) {
     }
     rewind(SectionFile);
 
-    SectionData.mode = (int**)malloc(mode_len * 2 * sizeof(int));
+    SectionDMData.mode = (int**)malloc(mode_len * 2 * sizeof(int));
     for (int i = 0; i < mode_len; i++) {
-        SectionData.mode[i] = (int*)malloc(2 * sizeof(int));
+        SectionDMData.mode[i] = (int*)malloc(2 * sizeof(int));
     }
-    SectionData.mode2 = (int**)malloc(mode2_len * 2 * sizeof(int));
+    SectionDMData.mode2 = (int**)malloc(mode2_len * 2 * sizeof(int));
     for (int i = 0; i < mode2_len; i++) {
-        SectionData.mode2[i] = (int*)malloc(2 * sizeof(int));
+        SectionDMData.mode2[i] = (int*)malloc(2 * sizeof(int));
     }
-    SectionData.mode_len = mode_len;
-    SectionData.mode2_len = mode2_len;
+    SectionDMData.mode_len = mode_len;
+    SectionDMData.mode2_len = mode2_len;
 
-    strcpy(SectionData.st_A_Name, "");
-    strcpy(SectionData.st_B_Name, "");
+    strcpy(SectionDMData.st_A_Name, "");
+    strcpy(SectionDMData.st_B_Name, "");
 
     int k = 0;
     int d = 0;
@@ -243,13 +252,13 @@ int ReadSectionDMFile(char path[]) {
         case 0:
             if (k == 1 & kprev == 1 & ch != '-') {
                 //d += (int)(ch - '0');
-                strcat(SectionData.st_A_Name, &ch);
+                strcat(SectionDMData.st_A_Name, &ch);
             }
             break;
         case 1:
             if (k == 1 & kprev == 1 & ch != '-') {
                 //d += (int)(ch - '0');
-                strcat(SectionData.st_B_Name, &ch);
+                strcat(SectionDMData.st_B_Name, &ch);
             }
             digitafterdot = 0;
             break;
@@ -268,9 +277,9 @@ int ReadSectionDMFile(char path[]) {
             }
             else if ((k == 0 & kprev == 1) | (ch == ' ' & k == 1)) { //ÑAÑpÑs - ÑuÑÉÑ|Ñy 2 Ñy ÑqÑÄÑ|ÑéÑäÑu ÑÅÑÇÑÄÑqÑuÑ|ÑÄÑr - Ñ~Ñu ÑÇÑpÑqÑÄÑÑÑpÑuÑÑ
                 if (digitafterdot != 0) {
-                    SectionData.st_A_center[stcenter_i] = (d + dap / pow(10, digitafterdot - 1)) * minus;
+                    SectionDMData.st_A_center[stcenter_i] = (d + dap / pow(10, digitafterdot - 1)) * minus;
                 }
-                else SectionData.st_A_center[stcenter_i] = d;
+                else SectionDMData.st_A_center[stcenter_i] = d;
                 d = 0;
                 dap = 0;
                 digitafterdot = 0;
@@ -292,9 +301,9 @@ int ReadSectionDMFile(char path[]) {
             }
             else if ((k == 0 & kprev == 1) | (ch == ' ' & k == 1)) {
                 if (digitafterdot != 0) {
-                    SectionData.st_B_center[stcenter_i] = (d + dap / pow(10, digitafterdot - 1)) * minus;
+                    SectionDMData.st_B_center[stcenter_i] = (d + dap / pow(10, digitafterdot - 1)) * minus;
                 }
-                else SectionData.st_B_center[stcenter_i] = d;
+                else SectionDMData.st_B_center[stcenter_i] = d;
                 d = 0;
                 dap = 0;
                 digitafterdot = 0;
@@ -308,7 +317,7 @@ int ReadSectionDMFile(char path[]) {
                 d += (int)(ch - '0');
             }
             else if (k == 0 & kprev == 1) {
-                SectionData.interval = d;
+                SectionDMData.interval = d;
                 d = 0;
             }
             break;
@@ -318,7 +327,7 @@ int ReadSectionDMFile(char path[]) {
                 d += (int)(ch - '0');
             }
             else if (k == 0 & kprev == 1) {
-                SectionData.stationWait = d;
+                SectionDMData.stationWait = d;
                 d = 0;
                 digitafterdot = 0;
             }
@@ -335,9 +344,9 @@ int ReadSectionDMFile(char path[]) {
             }
             else if (k == 0 & kprev == 1) {
                 if (digitafterdot != 0) {
-                    SectionData.st_len = d + dap / pow(10, digitafterdot - 1);
+                    SectionDMData.st_len = d + dap / pow(10, digitafterdot - 1);
                 }
-                else SectionData.st_len = d;
+                else SectionDMData.st_len = d;
                 d = 0;
                 dap = 0;
                 digitafterdot = 0;
@@ -349,7 +358,7 @@ int ReadSectionDMFile(char path[]) {
                 d += (int)(ch - '0');
             }
             else if (k == 0 & kprev == 1) {
-                SectionData.Coeff = d;
+                SectionDMData.Coeff = d;
                 d = 0;
             }
             break;
@@ -359,7 +368,7 @@ int ReadSectionDMFile(char path[]) {
                 d += (int)(ch - '0');
             }
             else if (k == 0 & kprev == 1) {
-                SectionData.SlopeFilter = d;
+                SectionDMData.SlopeFilter = d;
                 d = 0;
             }
             break;
@@ -377,9 +386,9 @@ int ReadSectionDMFile(char path[]) {
                 //printf("%c\n", ch);
             }
             else if ((SquareBracketsCount != 2 & SquareBracketsCountPrev == 2)) {
-                SectionData.mode[mode_i][0] = d;
-                SectionData.mode[mode_i][1] = dap;
-                //printf("%i %i %i\n", mode_i, SectionData.mode[0][0], SectionData.mode[0][0]);
+                SectionDMData.mode[mode_i][0] = d;
+                SectionDMData.mode[mode_i][1] = dap;
+                //printf("%i %i %i\n", mode_i, SectionDMData.mode[0][0], SectionDMData.mode[0][0]);
                 d = 0;
                 dap = 0;
                 digitafterdot = 0;
@@ -400,9 +409,9 @@ int ReadSectionDMFile(char path[]) {
                 //printf("%c\n", ch);
             }
             else if ((SquareBracketsCount != 2 & SquareBracketsCountPrev == 2)) {
-                SectionData.mode2[mode2_i][0] = d;
-                SectionData.mode2[mode2_i][1] = dap;
-                //printf("%i %i %i\n", mode_i, SectionData.mode[0][0], SectionData.mode[0][0]);
+                SectionDMData.mode2[mode2_i][0] = d;
+                SectionDMData.mode2[mode2_i][1] = dap;
+                //printf("%i %i %i\n", mode_i, SectionDMData.mode[0][0], SectionDMData.mode[0][0]);
                 d = 0;
                 dap = 0;
                 digitafterdot = 0;
@@ -416,6 +425,212 @@ int ReadSectionDMFile(char path[]) {
 
     printf("Section File Loaded To RAM Successfully\n\n");
     fclose(SectionFile);
+    return 0;
+}
+int signals_len;
+int customNum_len;
+int ReadSectionSignalsFile(char path[]) {
+    //printf("SPAth:%s\n", path);
+    FILE* SignalsFile;
+    SignalsFile = fopen(path, "r");
+    if (SignalsFile == NULL) {
+        printf("Can't Find Signals File.\nTry again [0] / Create file with this name [1]: ");
+        char ch;
+_ReadSectionSignalsFileFileScanagain:
+        scanf("%1c", &ch);
+        if (ch == '1') {
+            SignalsFile = fopen(path, "w");
+            fprintf(SignalsFile, "");
+        }
+        else if (ch != '0') goto _ReadSectionSignalsFileFileScanagain;
+        printf("\n");
+        return -1;
+    }
+    //Å´ Reading the file
+    int skip_marker = 0;
+    int lines_count = 0;
+    int mode1or2 = 1;
+    signals_len = 0;
+    customNum_len = 0;
+    int SquareBracketsCount = 0;
+    char ch;
+    while (!feof(SignalsFile)) {
+        ch = fgetc(SignalsFile);
+        if (ch == '#') skip_marker = 1;
+        if (ch == '\n') {
+            skip_marker = 0;
+            continue;
+        }
+        if (skip_marker == 1) continue;
+        if (ch == ';') lines_count++;
+        if (ch == '[') {
+            SquareBracketsCount++;
+            if (SquareBracketsCount == 2) {
+                if (mode1or2 == 1) {
+                    signals_len++;
+                }
+                else customNum_len++;
+            }
+        }
+        if (ch == ']') {
+            SquareBracketsCount--;
+            if (SquareBracketsCount == 0) mode1or2 = 2;
+        }
+    }
+    if (lines_count != 5) {
+        printf("File Is Incorrect");
+        fclose(SignalsFile);
+        return -1;
+    }
+    rewind(SignalsFile);
+
+    SectionSignalsData.signals = (float****)malloc(signals_len * 17 * sizeof(float));
+    for (int i = 0; i < signals_len; i++) {
+        SectionSignalsData.signals[i] = (float***)malloc(17 * sizeof(float));
+        for (int j = 0; j < 10; j++) {
+            if (j != 8) {
+                SectionSignalsData.signals[i][j] = (float**)malloc(sizeof(float));
+                *SectionSignalsData.signals[i][j] = (float*)malloc(sizeof(float));
+                **SectionSignalsData.signals[i][j] = NAN;
+                continue;
+            }
+            SectionSignalsData.signals[i][8] = (float**)malloc(8 * sizeof(float));
+            for (int k = 0; k < 4; k++) {
+                SectionSignalsData.signals[i][8][k] = (float*)malloc(2 * sizeof(float));
+                SectionSignalsData.signals[i][8][k][0] = NAN;
+                SectionSignalsData.signals[i][8][k][1] = NAN;
+            }
+        }
+    }
+    SectionSignalsData.customNum = (int**)malloc(customNum_len * 2 * sizeof(int));
+    for (int i = 0; i < customNum_len; i++) {
+        SectionSignalsData.customNum[i] = (int*)malloc(2 * sizeof(int));
+    }
+    SectionSignalsData.signals_len = signals_len;
+    SectionSignalsData.customNum_len = customNum_len;
+
+    int k = 0;
+    int d = 0;
+    int dap = 0;
+    int digitafterdot = 0;
+    int stcenter_i = 0;
+    int mode_i = 0;
+    int mode1_i = 0;
+    int mode2_i = 0;
+    int kprev = 0;
+    int minus = 1;
+    lines_count = 0;
+    int commacounter = 0;
+    int linecounter = 0;
+    SquareBracketsCount = 0;
+    int SquareBracketsCountPrev = 0;
+
+    while (!feof(SignalsFile)) {
+        ch = fgetc(SignalsFile);
+        if (ch == '#') skip_marker = 1;
+        if (ch == '\n') {
+            skip_marker = 0;
+            continue;
+        }
+        if (skip_marker == 1) continue;
+
+        kprev = k;
+        SquareBracketsCountPrev = SquareBracketsCount;
+        if (ch == ';') lines_count++;
+        if (ch == '"') k = (k + 1) % 2;
+        if (ch == '.') digitafterdot = 1;
+        if (ch == '[') SquareBracketsCount++;
+        if (ch == ']') SquareBracketsCount--;
+        switch (lines_count) {
+        case 0: //FackMethod
+            if (k == 1 & kprev == 1 & ch != '-') {
+                d *= 10;
+                d += (int)(ch - '0');
+            }
+            else if (k == 0 & kprev == 1) {
+                SectionSignalsData.FackMethod = d;
+                d = 0;
+            }
+            break;
+        case 1: //CalcType
+            if (k == 1 & kprev == 1 & ch != '-') {
+                d *= 10;
+                d += (int)(ch - '0');
+            }
+            else if (k == 0 & kprev == 1) {
+                SectionSignalsData.CalcType = d;
+                d = 0;
+                digitafterdot = 0;
+            }
+            break;
+        case 2: //Signals
+            if (ch == '.') digitafterdot = 1;
+            if ((SquareBracketsCount == 2 & SquareBracketsCountPrev == 2 & digitafterdot == 0 & ch != '-' & ch != ' ' & ch != ',')) {
+                d *= 10;
+                d += (int)(ch - '0');
+            }
+            else if ((SquareBracketsCount == 2 & SquareBracketsCountPrev == 2 & digitafterdot > 0 & ch != '-' & ch != ' ' & ch != ',' & ch != '.')) {
+                digitafterdot++;
+                dap *= 10;
+                dap += (int)(ch - '0');
+            }
+            else if ((ch == ',' & SquareBracketsCount == 2) | (SquareBracketsCount == 1 & SquareBracketsCountPrev == 2)) {
+                if (digitafterdot != 0) {
+                    **SectionSignalsData.signals[linecounter][commacounter] = (d + dap / pow(10, digitafterdot - 1));
+                }
+                else **SectionSignalsData.signals[linecounter][commacounter] = d;
+                //printf("signals[%i][%i] = %f\n", linecounter, commacounter, **SectionSignalsData.signals[linecounter][commacounter]);
+                d = 0;
+                dap = 0;
+                digitafterdot = 0;
+                commacounter++;
+            }
+            if (SquareBracketsCount == 1 & SquareBracketsCountPrev == 2) {
+                commacounter = 0;
+                linecounter += 1;
+            }
+            break;
+        case 3: //NumerationStart
+            if (k == 1 & kprev == 1 & ch != '-') {
+                d *= 10;
+                d += (int)(ch - '0');
+            }
+            else if (k == 0 & kprev == 1) {
+                SectionSignalsData.NumerationStart = d;
+                d = 0;
+                digitafterdot = 0;
+            }
+            break;
+            case 4:
+            if (ch == ',' & SquareBracketsCount == 2) digitafterdot = 1;
+            //printf("ch %c SquareBracketsCount %i SquareBracketsCountPrev %i digitafterdot %i\n", ch, SquareBracketsCount, SquareBracketsCountPrev, digitafterdot);
+            if (SquareBracketsCount == 2 & SquareBracketsCountPrev == 2 & digitafterdot == 0 & ch != '-' & ch != ' ' & ch != ',') {
+                d *= 10;
+                d += (int)(ch - '0');
+            }
+            else if (SquareBracketsCount == 2 & SquareBracketsCountPrev == 2 & digitafterdot > 0 & ch != '.' & ch != ',' & ch != ' ') {
+                digitafterdot++;
+                dap *= 10;
+                dap += (int)(ch - '0');
+                //printf("%c\n", ch);
+            }
+            else if ((SquareBracketsCount != 2 & SquareBracketsCountPrev == 2)) {
+                SectionSignalsData.customNum[mode_i][0] = d;
+                SectionSignalsData.customNum[mode_i][1] = dap;
+                //printf("%i %i %i\n", mode_i, SectionDMData.mode[0][0], SectionDMData.mode[0][0]);
+                d = 0;
+                dap = 0;
+                digitafterdot = 0;
+                mode_i++;
+            }
+            break;
+        }
+    }
+
+    //ÑTÑqÑÇÑpÑÑÑé Ñ}ÑÖÑÉÑÄÑÇ
+
+    printf("Signals File Loaded To RAM Successfully\n\n");
+    fclose(SignalsFile);
     return 0;
 }
 
@@ -502,7 +717,7 @@ short int ReadTracksFile(char path[]) {
         }
         if (ch == '.') k = 3;
 
-        if (k == 2 & kprev == 2) {
+        if (k == 2 & kprev == 2 & ch != ' ') {
             if (ch == '-') {
                 minus = -1;
             }
@@ -567,28 +782,30 @@ int A_eki[2];
 int B_eki[2];
 int NodesInSection;
 double** TrackProfile;
-long LenByTracks = 0;
+long double LenByTracks = 0;
 short int TrackProfileIsExist = 0;
 int Profile_Think() {
-    //printf("st A center: [%f, %f, %f]\n",SectionData.st_A_center[0], SectionData.st_A_center[1], SectionData.st_A_center[2]);
+    LenByTracks = 0;
+    TrackProfileIsExist = 0;
+    //printf("st A center: [%f, %f, %f]\n",SectionDMData.st_A_center[0], SectionDMData.st_A_center[1], SectionDMData.st_A_center[2]);
 
     double min = pow(10, 10);
     for (int i = 0; i < NumbersOfTracks; i++) {
         for (int j = 0; j < LenOfTracks[i]; j++) {
-            double len = sqrt(pow(GetParsedData(i, j, 0) - SectionData.st_A_center[0], 2) + pow(GetParsedData(i, j, 1) - SectionData.st_A_center[1], 2) + pow(GetParsedData(i, j, 2) - SectionData.st_A_center[2], 2));
+            double len = sqrt(pow(GetParsedData(i, j, 0) - SectionDMData.st_A_center[0], 2) + pow(GetParsedData(i, j, 1) - SectionDMData.st_A_center[1], 2) + pow(GetParsedData(i, j, 2) - SectionDMData.st_A_center[2], 2));
             if (min >= len) {
                 min = len;
                 //printf("A_eki: i = %i, j = %i, min = %f\n",i,j,min);
                 A_eki[0] = i;
                 A_eki[1] = j;
             }
-            //printf("GetParsedData - st A center: i = %i, j = %i: [%f, %f, %f]\n", i, j, GetParsedData(i,j,0) - SectionData.st_A_center[0], GetParsedData(i,j,1) - SectionData.st_A_center[1], GetParsedData(i,j,2) - SectionData.st_A_center[2]);
+            //printf("GetParsedData - st A center: i = %i, j = %i: [%f, %f, %f]\n", i, j, GetParsedData(i,j,0) - SectionDMData.st_A_center[0], GetParsedData(i,j,1) - SectionDMData.st_A_center[1], GetParsedData(i,j,2) - SectionDMData.st_A_center[2]);
         }
     }
     min = pow(10, 10);
     for (int i = 0; i < NumbersOfTracks; i++) {
         for (int j = 0; j < LenOfTracks[i]; j++) {
-            float len = sqrt(pow(GetParsedData(i, j, 0) - SectionData.st_B_center[0], 2) + pow(GetParsedData(i, j, 1) - SectionData.st_B_center[1], 2) + pow(GetParsedData(i, j, 2) - SectionData.st_B_center[2], 2));
+            float len = sqrt(pow(GetParsedData(i, j, 0) - SectionDMData.st_B_center[0], 2) + pow(GetParsedData(i, j, 1) - SectionDMData.st_B_center[1], 2) + pow(GetParsedData(i, j, 2) - SectionDMData.st_B_center[2], 2));
             if (min >= len) {
                 min = len;
                 //printf("B_eki: i = %i, j = %i, min = %f\n",i,j,min);
@@ -598,7 +815,7 @@ int Profile_Think() {
         }
     }
 
-    printf("Profile_Think: %s linked to %i track %i node.\nProfile_Think: %s linked to %i track %i node.\n", SectionData.st_A_Name, A_eki[0], A_eki[1], SectionData.st_B_Name, B_eki[0], B_eki[1]);
+    printf("Profile_Think: %s linked to %i track %i node.\nProfile_Think: %s linked to %i track %i node.\n", SectionDMData.st_A_Name, A_eki[0], A_eki[1], SectionDMData.st_B_Name, B_eki[0], B_eki[1]);
     NodesInSection = abs(B_eki[1] - A_eki[1]);
 
     if (A_eki[0] == B_eki[0]) {
@@ -617,8 +834,11 @@ int Profile_Think() {
             TrackProfile[i][2] *= 0.01905;
             LenByTracks += TrackProfile[i][0];
             TrackProfile[i][0] *= 0.01905;
+            //if (TrackProfile[i][0] > 10) printf("Popalsya: [%i] %f Node: [%f %f %f]\n", i, TrackProfile[i][0], GetParsedData(A_eki[0], A_eki[1] + i, 0), GetParsedData(A_eki[0], A_eki[1] + i, 1), GetParsedData(A_eki[0], A_eki[1] + i, 2));
         }
         LenByTracks *= 0.01905;
+        //printf("LBT: %Lf\n", LenByTracks);
+        //printf("NIS: %i\n", NodesInSection);
 
         //Å™ ÑBÑÉÑu ÑÇÑpÑqÑÄÑÑÑpÑuÑÑ
         //Å´ ÑEÑãÑu Ñ~Ñu ÑÅÑÇÑÄÑrÑuÑÇÑuÑ~ÑÄ
@@ -626,7 +846,7 @@ int Profile_Think() {
         int slopeFilter = 0;
         if (slopeFilter == 1) {
             for (int i = 0; i < NodesInSection; i++) {
-                double mp = 0;
+                long double mp = 0;
                 int j = i;
                 while (TrackProfile[i][1] != 0) {
                     mp += TrackProfile[j][1];
@@ -654,7 +874,7 @@ int Profile_Think() {
         }
 
         for (int i = 0; i < NodesInSection; i++) {
-            long mp = 0;
+            long double mp = 0;
             int j = i;
             while (TrackProfile[i][2] != 0) {
                 //printf("DEBUG: I = %i, J = %i\n", i, j);
@@ -668,7 +888,7 @@ int Profile_Think() {
                     j -= 1;
                     break;
                 }
-                if ((int)TrackProfile[i][2] / fabs(TrackProfile[i][2]) != (int)TrackProfile[j][2] / fabs(TrackProfile[j][2])) {
+                if (TrackProfile[i][2] / fabs(TrackProfile[i][2]) != TrackProfile[j][2] / fabs(TrackProfile[j][2])) {
                     j -= 1;
                     break;
                 }
@@ -680,10 +900,6 @@ int Profile_Think() {
                 i++;
             }
         }
-
-        free(ParsedData);
-        free(EndOfEachTrack);
-        free(LenOfTracks);
 
         st_B = st_A + LenByTracks;
         printf("Profile_Think: Received Date Is Processed\n\n");
@@ -705,13 +921,13 @@ void TrackProfileFree() {
 }
 
 float* getProfileByTracks(float x) {
-    long len = 0;
+    long double len = 0;
     float a1 = 0;
     float a2 = 0;
     if (A_eki[1] > B_eki[1]) x = LenByTracks - x;
     for (int i = 0; i < NodesInSection; i++) {
         len += TrackProfile[i][0];
-        if (len - TrackProfile[i][0] / 2 >= x & TrackProfile[i][1] != NAN) {
+        if (len - TrackProfile[i][0] / 2 >= x & isfinite(TrackProfile[i][1])) {
             a1 = TrackProfile[i][1];
             break;
         }
@@ -725,6 +941,10 @@ float* getProfileByTracks(float x) {
         }
     }
 
+    if (A_eki[1] > B_eki[1]) {
+        if (a1 != 0) a1 *= -1;
+        if (a1 != 0) a2 *= -1;
+    }
     static float arr[2];
     arr[0] = a1;
     arr[1] = a2;
@@ -737,19 +957,19 @@ float* getProfileByTracks(float x) {
 //Calc.c Å´
 int mode(double x) {
     int m = 1;
-    for (int i = 0; i < SectionData.mode_len - 1; i++) {
-        if (SectionData.mode[i][0] > x) break;
-        m = SectionData.mode[i][1];
-        //printf("SectionData.mode[%i][1] = %i", i, SectionData.mode[i][1]);
+    for (int i = 0; i < SectionDMData.mode_len - 1; i++) {
+        if (SectionDMData.mode[i][0] > x) break;
+        m = SectionDMData.mode[i][1];
+        //printf("SectionDMData.mode[%i][1] = %i", i, SectionDMData.mode[i][1]);
     }
     //printf("MMMode - %i", m);
     return m;
 }
 int mode2(double x) {
     int m = 1.0;
-    for (int i = 0; i < SectionData.mode2_len - 1; i++) {
-        if (SectionData.mode2[i][0] > x) break;
-        m = SectionData.mode2[i][1];
+    for (int i = 0; i < SectionDMData.mode2_len - 1; i++) {
+        if (SectionDMData.mode2[i][0] > x) break;
+        m = SectionDMData.mode2[i][1];
     }
     return m;
 }
@@ -787,10 +1007,10 @@ double dist;
 int stop1;
 int DMcalculation(char path[]) {
     FILE* BINDM;
-    int SectionDataModeLenFromBinFile;
-    int SectionDataMode2LenFromBinFile;
-    int SectionDataSlopeFilter;
-    float SectionDataCoeff;
+    int SectionDMDataModeLenFromBinFile;
+    int SectionDMDataMode2LenFromBinFile;
+    int SectionDMDataSlopeFilter;
+    float SectionDMDataCoeff;
     int aeki0, aeki1, beki0, beki1;
     float DeltaSpeed;
     double speed;
@@ -804,29 +1024,29 @@ int DMcalculation(char path[]) {
     BINDM = fopen(path, "rb");
     if (BINDM == NULL) { printf("DMcalculation: Cannot Find The Binary File: "); goto _DMcalculationWriteNewBinSection; }
     //ÑÅÑÇÑÄÑrÑuÑÇÑ{Ñp ÑÜÑpÑzÑ|Ñp Ñ~Ñp ÑÉÑÄÑÄÑÑÑrÑuÑÑÑÉÑÑÑrÑyÑu ÑyÑÉÑáÑÄÑtÑ~ÑyÑ{ÑpÑ}
-    fread(&SectionDataModeLenFromBinFile, sizeof(int), 1, BINDM);
-    if (SectionDataModeLenFromBinFile != SectionData.mode_len) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
-    fread(&SectionDataMode2LenFromBinFile, sizeof(int), 1, BINDM);
-    if (SectionDataMode2LenFromBinFile != SectionData.mode2_len) { printf("DMcalculation: Mode2 Has Been Changed: ", 2); goto _DMcalculationWriteNewBinSection; }
-    for (int i = 0; i < SectionData.mode_len - 1; i++) {
+    fread(&SectionDMDataModeLenFromBinFile, sizeof(int), 1, BINDM);
+    if (SectionDMDataModeLenFromBinFile != SectionDMData.mode_len) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+    fread(&SectionDMDataMode2LenFromBinFile, sizeof(int), 1, BINDM);
+    if (SectionDMDataMode2LenFromBinFile != SectionDMData.mode2_len) { printf("DMcalculation: Mode2 Has Been Changed: ", 2); goto _DMcalculationWriteNewBinSection; }
+    for (int i = 0; i < SectionDMData.mode_len - 1; i++) {
         int tempmodedata1, tempmodedata2;
         fread(&tempmodedata1, sizeof(int), 1, BINDM);
-        //printf("%i %i\n",tempmodedata1,SectionData.mode[i][0]);
-        if (tempmodedata1 != SectionData.mode[i][0]) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+        //printf("%i %i\n",tempmodedata1,SectionDMData.mode[i][0]);
+        if (tempmodedata1 != SectionDMData.mode[i][0]) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
         fread(&tempmodedata2, sizeof(int), 1, BINDM);
-        if (tempmodedata2 != SectionData.mode[i][1]) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+        if (tempmodedata2 != SectionDMData.mode[i][1]) { printf("DMcalculation: Mode Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
     }
-    for (int i = 0; i < SectionData.mode2_len - 1; i++) {
+    for (int i = 0; i < SectionDMData.mode2_len - 1; i++) {
         int tempmode2data1, tempmode2data2;
         fread(&tempmode2data1, sizeof(int), 1, BINDM);
-        if (tempmode2data1 != SectionData.mode2[i][0]) { printf("DMcalculation: Mode2 Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+        if (tempmode2data1 != SectionDMData.mode2[i][0]) { printf("DMcalculation: Mode2 Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
         fread(&tempmode2data2, sizeof(int), 1, BINDM);
-        if (tempmode2data2 != SectionData.mode2[i][1]) { printf("DMcalculation: Mode2 Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+        if (tempmode2data2 != SectionDMData.mode2[i][1]) { printf("DMcalculation: Mode2 Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
     }
-    fread(&SectionDataSlopeFilter, sizeof(int), 1, BINDM);
-    if (SectionDataSlopeFilter != SectionData.SlopeFilter) { printf("DMcalculation: Slope Filter Variable Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
-    fread(&SectionDataCoeff, sizeof(float), 1, BINDM);
-    if (SectionDataCoeff != SectionData.Coeff) { printf("DMcalculation: Coeff Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+    fread(&SectionDMDataSlopeFilter, sizeof(int), 1, BINDM);
+    if (SectionDMDataSlopeFilter != SectionDMData.SlopeFilter) { printf("DMcalculation: Slope Filter Variable Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
+    fread(&SectionDMDataCoeff, sizeof(float), 1, BINDM);
+    if (SectionDMDataCoeff != SectionDMData.Coeff) { printf("DMcalculation: Coeff Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
     fread(&aeki0, sizeof(int), 1, BINDM);
     if (aeki0 != A_eki[0]) { printf("DMcalculation: Station A Coords Has Been Changed: "); goto _DMcalculationWriteNewBinSection; }
     fread(&aeki1, sizeof(int), 1, BINDM);
@@ -843,18 +1063,18 @@ _DMcalculationWriteNewBinSection:
     if (BINDM != NULL) fclose(BINDM);
     printf("Creating new file...\n");
     BINDM = fopen(path, "wb");
-    fwrite(&SectionData.mode_len, sizeof(int), 1, BINDM);
-    fwrite(&SectionData.mode2_len, sizeof(int), 1, BINDM);
-    for (int i = 0; i < SectionData.mode_len - 1; i++) {
-        fwrite(&SectionData.mode[i][0], sizeof(int), 1, BINDM);
-        fwrite(&SectionData.mode[i][1], sizeof(int), 1, BINDM);
+    fwrite(&SectionDMData.mode_len, sizeof(int), 1, BINDM);
+    fwrite(&SectionDMData.mode2_len, sizeof(int), 1, BINDM);
+    for (int i = 0; i < SectionDMData.mode_len - 1; i++) {
+        fwrite(&SectionDMData.mode[i][0], sizeof(int), 1, BINDM);
+        fwrite(&SectionDMData.mode[i][1], sizeof(int), 1, BINDM);
     }
-    for (int i = 0; i < SectionData.mode2_len - 1; i++) {
-        fwrite(&SectionData.mode2[i][0], sizeof(int), 1, BINDM);
-        fwrite(&SectionData.mode2[i][1], sizeof(int), 1, BINDM);
+    for (int i = 0; i < SectionDMData.mode2_len - 1; i++) {
+        fwrite(&SectionDMData.mode2[i][0], sizeof(int), 1, BINDM);
+        fwrite(&SectionDMData.mode2[i][1], sizeof(int), 1, BINDM);
     }
-    fwrite(&SectionData.SlopeFilter, sizeof(int), 1, BINDM);
-    fwrite(&SectionData.Coeff, sizeof(float), 1, BINDM);
+    fwrite(&SectionDMData.SlopeFilter, sizeof(int), 1, BINDM);
+    fwrite(&SectionDMData.Coeff, sizeof(float), 1, BINDM);
 
     fwrite(&A_eki[0], sizeof(int), 1, BINDM);
     fwrite(&A_eki[1], sizeof(int), 1, BINDM);
@@ -873,7 +1093,7 @@ _DMcalculationCalc:
     dp = 0;
     md;
     stt = FALSE;
-    while (dist <= LenByTracks & speed >= 0) {
+    while (dist <= LenByTracks + 3 & speed >= 0) {
         if (!stt & dist >= LenByTracks - 1000) if (dist >= LenByTracks - AccBrake(speed, dist)) { stt = TRUE; printf("DMcalculation: %f - Brake Point\n", dist); };
         if (!stt) {
             md = mode(dist);
@@ -892,15 +1112,17 @@ _DMcalculationCalc:
         fwrite(&dist, sizeof(double), 1, BINDM);
         fwrite(&speed, sizeof(double), 1, BINDM);
         fwrite(&time, sizeof(double), 1, BINDM);
+        //printf("[%i] dist - %f, speed - %f, time - %f (slope = %f, mode = %i)\n", ttt, dist, speed, time, getProfileByTracks(dist)[0], md);
         ttt += 1;
         if (dist <= dp) {
             break;
         }
         stop1 = ttt;
     }
+    printf("LenOfSection: %lf\n", LenByTracks);
     printf("DMcalculation: %f - Running time\n", time);
     dist1 = dist;
-    time += SectionData.stationWait;
+    time += SectionDMData.stationWait;
     while (dist <= LenByTracks + 300 & speed >= 0) {
         timeDelta = dt(mode2(dist - dist1), getProfileByTracks(dist)[0], getProfileByTracks(dist)[1], speed, DeltaSpeed);
         if (timeDelta <= 0) {
@@ -926,14 +1148,14 @@ _DMcalculationCalc:
     fwrite(&dist, sizeof(double), 1, BINDM);
     fwrite(&stop1, sizeof(int), 1, BINDM);
     Calculated_Length = ttt;
-    fseek(BINDM, (SectionData.mode_len * 2 - 2 + SectionData.mode2_len * 2 - 2 + 7) * sizeof(int) + sizeof(float), SEEK_SET);
+    fseek(BINDM, (SectionDMData.mode_len * 2 - 2 + SectionDMData.mode2_len * 2 - 2 + 7) * sizeof(int) + sizeof(float), SEEK_SET);
     fwrite(&Calculated_Length, sizeof(int), 1, BINDM);
     //printf("Calculated_Len(Calc): %i\n", Calculated_Length);
     printf("DMcalculation: New file created successfully.\n");
 
     fclose(BINDM);
     BINDM = fopen(path, "rb");
-    fseek(BINDM, (SectionData.mode_len * 2 - 2 + SectionData.mode2_len * 2 - 2 + 7) * sizeof(int) + sizeof(float), SEEK_SET);
+    fseek(BINDM, (SectionDMData.mode_len * 2 - 2 + SectionDMData.mode2_len * 2 - 2 + 7) * sizeof(int) + sizeof(float), SEEK_SET);
 
 _DMcalculationBinToArray:
     fread(&Calculated_Length, sizeof(int), 1, BINDM);////////////////////////////////////////////
@@ -951,10 +1173,10 @@ _DMcalculationBinToArray:
     fread(&dist, sizeof(double), 1, BINDM);
     fread(&stop1, sizeof(int), 1, BINDM);
     printf("DMcalculation: DM Data Loaded to RAM successfully.\n\n");
-    heigh = ceil((time + SectionData.interval) / 10);
-    spd_heigh = 1080.0 / (heigh + 5);
+    heigh = ceil((time + SectionDMData.interval) / 10);
+    spd_heigh = (1080.0 - 250) / (heigh);
     starty = spd_heigh;
-    endx = dist + st_A + SectionData.st_len * 2;
+    endx = dist + st_A + SectionDMData.st_len * 2;
     endy = starty + spd_heigh * heigh;
     dist_len = 1920.0/(endx + 50);
     fclose(BINDM);
@@ -992,43 +1214,91 @@ void choose_line() {
 char NameOfSection[52];
 void choose_section() {
     char PathToDM[54];
-    char PathToSignals[59];
     char PathToDMEx[67];
-    char PathToSignalsEx[72];
     strcpy(PathToDM, PathToFolder);
     strcat(PathToDM, "/dm");
-    strcpy(PathToSignals, PathToFolder);
-    strcat(PathToSignals, "/signals");
     _mkdir(PathToDM);
-    _mkdir(PathToSignals);
     strcpy(PathToDMEx, PathToDM);
-    strcpy(PathToSignalsEx, PathToDMEx);
     strcat(PathToDMEx, "/example.txt");
-    strcat(PathToSignalsEx, "/example.txt");
     FILE* ex1, * ex2;
     ex1 = fopen(PathToDMEx, "w");
-    ex2 = fopen(PathToSignalsEx, "w");
     fprintf(ex1, "\"St. A\"; #\"st_A_Name\";\n\"St. B\"; #\"st_B_Name\";\n\n\"-557.330933 13539.387695 1617.857422\";  #\"st_A_center\";\n\"-14387.382813 3013.013428 2264.259033\"; #\"st_B_center\";\n\n\"90\";    #\"interval\";\n\"30\";    #\"stationWait\";\n\"57.36\"; #\"st_len\";\n\n\"1\"; #\"Coeff\"; #usually 1 or 1.5\n\"1\"; #\"SlopeFilter\"; #0 or 1\n\nmode = [\n    [125, 0],\n    [200, 2],\n    [225, 0]\n];\n\nmode2 = [\n    [150,0]\n];");
-    fprintf(ex2, "");
     fclose(ex1);
-    fclose(ex2);
     char PathToSection[105];
     do {
-        NameOfSection[0] = '/';
-        NameOfSection[1] = '\0';
-        PathToSection[0] = '\0';
-        strcpy(PathToSection, PathToDM);
-        printf("Section File Name: ");
-        scanf("%50s", NameOfSection + sizeof(char));
-        strcat(PathToSection, NameOfSection);
+        do {
+            NameOfSection[0] = '/';
+            NameOfSection[1] = '\0';
+            PathToSection[0] = '\0';
+            strcpy(PathToSection, PathToDM);
+            printf("Section File Name: ");
+            scanf("%50s", NameOfSection + sizeof(char));
+            strcat(PathToSection, NameOfSection);
+        } while (ReadSectionDMFile(PathToSection) == -1);
         TrackProfileFree();
-    } while (ReadSectionDMFile(PathToSection) == -1 | Profile_Think() == -1);
+    } while (Profile_Think() == -1);
     char PathToBin[110];
     strcpy(PathToBin, PathToFolder);
     strcat(PathToBin, "/src");
     strcat(PathToBin, NameOfSection);
     strcat(PathToBin, ".bin");
     DMcalculation(PathToBin);
+}
+char NameOfSignalisation[52];
+void choose_signalisation() {
+    char PathToSignals[59];
+    char PathToSignalsEx[72];
+    strcpy(PathToSignals, PathToFolder);
+    strcat(PathToSignals, "/signals");
+    _mkdir(PathToSignals);
+    //strcat(PathToSignalsEx, "/example.txt");
+    //FILE* ex2;
+    /*ex2 = fopen(PathToSignalsEx, "w");
+    fprintf(ex2, "");
+    fclose(ex2);*/
+    char PathToSectSignals[105];
+    do {
+        do {
+            NameOfSignalisation[0] = '/';
+            NameOfSignalisation[1] = '\0';
+            PathToSectSignals[0] = '\0';
+            strcpy(PathToSectSignals, PathToSignals);
+            printf("Signals File Name: ");
+            scanf("%50s", NameOfSignalisation + sizeof(char));
+            strcat(PathToSectSignals, NameOfSignalisation);
+        } while (ReadSectionSignalsFile(PathToSectSignals) == -1);
+    } while (0);
+    /*printf("%i\n", SectionSignalsData.FackMethod);
+    printf("%i\n", SectionSignalsData.CalcType);
+    for (int i = 0; i < signals_len; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (j != 8) {
+                printf("signals[%i][%i] = %f\n", i,j,**SectionSignalsData.signals[i][j]);
+                continue;
+            }
+            for (int k = 0; k < 4; k++) {
+                printf("%f %f\n", SectionSignalsData.signals[i][8][k][0], SectionSignalsData.signals[i][8][k][1]);
+            }
+        }
+    }*/
+    /*for (int i = 0; i < SectionSignalsData.customNum_len; i++) {
+        printf("cs[%i] = {%i, %i}\n", i, SectionSignalsData.customNum[i][0], SectionSignalsData.customNum[i][1]);
+    }*/
+    for (int i = 0; i < SectionSignalsData.signals_len; i++) {
+        if (**SectionSignalsData.signals[i][1] != 0) {
+            int flag = 1;
+            for (int j = 0; j < SectionSignalsData.customNum_len; j++) {
+                if (SectionSignalsData.customNum[j][0] == i) {
+                    **SectionSignalsData.signals[i][9] = SectionSignalsData.customNum[j][1];
+                    flag = 0;
+                    break;
+                }
+            }
+            if (!flag) continue;
+            **SectionSignalsData.signals[i][9] = abs(SectionSignalsData.NumerationStart);
+            SectionSignalsData.NumerationStart += 2;
+        }
+    }
 }
 //Previous main() Å™
 ///////////////////
@@ -1049,7 +1319,7 @@ int initialize_window(void) {
         SDL_WINDOWPOS_CENTERED,
         1920,
         1080,
-        SDL_WINDOW_FULLSCREEN_DESKTOP
+        SDL_WINDOW_ALLOW_HIGHDPI
     );
     if (!window) {
         fprintf(stderr, "Error creating SDL Window.");
@@ -1061,6 +1331,279 @@ int initialize_window(void) {
         return 0;
     }
     return 1;
+}
+
+void DrawCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius, int32_t sector)
+{
+    const int32_t diameter = (radius * 2);
+
+    int32_t x = (radius);
+    int32_t y = 0;
+    int32_t tx = 1;
+    int32_t ty = 1;
+    int32_t error = (tx - diameter);
+
+    while (x >= y)
+    {
+        //  Each of the following renders an octant of the circle
+        if (sector == 1) {
+            SDL_RenderDrawPoint(renderer, centreX + x, centreY - y);
+            SDL_RenderDrawPoint(renderer, centreX + y, centreY - x);
+        }
+        if (sector == 2) {
+            SDL_RenderDrawPoint(renderer, centreX - x, centreY - y);
+            SDL_RenderDrawPoint(renderer, centreX - y, centreY - x);
+        }
+        if (sector == 3) {
+            SDL_RenderDrawPoint(renderer, centreX - y, centreY + x);
+            SDL_RenderDrawPoint(renderer, centreX - x, centreY + y);
+        }
+        if (sector == 4) {
+            SDL_RenderDrawPoint(renderer, centreX + x, centreY + y);
+            SDL_RenderDrawPoint(renderer, centreX + y, centreY + x);
+        }
+
+        if (error <= 0)
+        {
+            ++y;
+            error += ty;
+            ty += 2;
+        }
+
+        if (error > 0)
+        {
+            --x;
+            tx += 2;
+            error += (tx - diameter);
+        }
+    }
+}
+
+float liney;
+TTF_Font* font;
+SDL_Color font_color = { 0, 0, 0 };
+SDL_Surface* surface;
+SDL_Texture* texture;
+int texW;
+int texH;
+void DrawSignal(float x, int name, int param) {
+    float y = liney;
+    x += st_A;
+    y -= 3;
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderDrawLine(renderer, x * dist_len, 0, x * dist_len, endy);
+    x -= 3;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderDrawLine(renderer, x * dist_len, y, x * dist_len + 6, y);
+    SDL_RenderDrawLine(renderer, x * dist_len + 3, y, x * dist_len + 3, y + 6);
+    SDL_RenderDrawLine(renderer, x * dist_len, y + 6, x * dist_len + 6, y + 6);
+    y += 12.5;
+    char* n_str[10];
+    _itoa(name, &n_str, 10);
+    if (param > 0) {
+        SDL_RenderDrawLine(renderer, x * dist_len, y, x * dist_len + 3, y);
+        SDL_RenderDrawLine(renderer, x * dist_len + 3, y, x * dist_len + 3, y + 6);
+        SDL_RenderDrawLine(renderer, x * dist_len + 3, y + 6, x * dist_len, y + 6);
+        SDL_RenderDrawLine(renderer, x * dist_len + 3, y + 3, x * dist_len + 8, y + 3);
+        DrawCircle(renderer, x * dist_len + 15, y + 3, 6, 1);
+        DrawCircle(renderer, x * dist_len + 15, y + 3, 6, 2);
+        DrawCircle(renderer, x * dist_len + 15, y + 3, 6, 3);
+        DrawCircle(renderer, x * dist_len + 15, y + 3, 6, 4);
+        surface = TTF_RenderText_Solid(font, n_str, font_color);
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+        SDL_Rect dstrect = { x * dist_len, y + 15, texW, texH };
+        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+        SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
+    }
+    ///// param == -1
+}
+void drawsignalisation() {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderDrawLine(renderer, 0, liney, endx * dist_len, liney);
+    //DrawSignal(100, 12345, 1);
+    printf("VKSy (sprava nalevo):\n");
+    int n_old;
+    for (int i = 0; i < SectionSignalsData.signals_len; i++) if (SectionSignalsData.signals[i][1] != 0) n_old = i;
+    for (int i = SectionSignalsData.signals_len - 1; i >= 0; i--) {
+        for (int j = 0; j < SectionSignalsData.signals_len; j++) {
+            if (**SectionSignalsData.signals[i][0] - SectionDMData.st_len / 2 <= Calculated[j][0]) {
+                **SectionSignalsData.signals[i][4] = endy - (Calculated[j][2] * spd_heigh / 10);
+                **SectionSignalsData.signals[i][5] = endy - (Calculated[j][2] + SectionDMData.interval) * spd_heigh / 10;
+                break;
+            }
+        }
+        for (int j = 0; j < Calculated_Length; j++) {
+            if (**SectionSignalsData.signals[i][0] + SectionDMData.st_len / 2 <= Calculated[j][0]) {
+                **SectionSignalsData.signals[i][6] = endy - (Calculated[j][2] * spd_heigh / 10);
+                break;
+            }
+        }
+        //printf("%f\n", **SectionSignalsData.signals[i][6]);
+        **SectionSignalsData.signals[i][7] = getProfileByTracks(**SectionSignalsData.signals[i][0])[0];
+        //console.log(signals[i])
+        //DrawSignal(signals[i][0],'êMçÜ',signals[i][1])
+        DrawSignal(**SectionSignalsData.signals[i][0], **SectionSignalsData.signals[i][9], **SectionSignalsData.signals[i][1]);
+
+        //VKS sektion-------------------------------------------------
+        /*if (**SectionSignalsData.signals[i + 1] != NAN) {
+            if (**SectionSignalsData.signals[i + 1][10] != NAN) {
+                float vksSpeed;
+                for (int j = stop1; j < Calculated_Length; j++) {
+                    vksSpeed = Calculated[j][1];
+                    if (**SectionSignalsData.signals[i][10] > 0) vksSpeed = **SectionSignalsData.signals[i][10];
+                    if (**SectionSignalsData.signals[i][10] < 0) vksSpeed = Calculated[j][1] + **SectionSignalsData.signals[i][10];
+                    if (Calculated[j][0] + AccBrake(vksSpeed) >= **SectionSignalsData.signals[i + 1][0] + SectionDMData.st_len / 2) {
+                        **SectionSignalsData.signals[i + 1][11] = Calculated[j][0] - SectionDMData.st_len / 2;
+                        for (int k = 0; k < Calculated_Length; k++) {
+                            if (**SectionSignalsData.signals[i + 1][11] + SectionDMData.st_len / 2 <= Calculated[k][0]) {
+                                **SectionSignalsData.signals[i + 1][12] = endy - (Calculated[k][2] * spd_heigh / 10);
+                                break;
+                            }
+                        }
+                        printf("VKS % f m.\n", **SectionSignalsData.signals[i + 1][11] - **SectionSignalsData.signals[i][0]);
+                        DrawSignal(**SectionSignalsData.signals[i + 1][11], -1, -1);
+                        break;
+                    }
+                }
+            }
+        }*/
+        if (SectionSignalsData.CalcType == 1 | SectionSignalsData.CalcType == 2) {
+            // [ÑHÑpÑãÑyÑÑ.ÑTÑâ/ÑKÑÇÑpÑÉÑ~/ÑGÑuÑ|ÑÑ/ÑGÑH]
+            if (**SectionSignalsData.signals[i][1] != 0) {
+                //ctx.fillText(signIsVisibleDist(Profile(signals[i][0])[1],6),signals[i][0]+st_A,endy+20) //ÑBÑyÑtÑyÑ}ÑÄÑÉÑÑÑé
+                if (1 | **SectionSignalsData.signals[i][3] == NAN) {
+                    **SectionSignalsData.signals[i][3] = Ebrake(**SectionSignalsData.signals[i][2], **SectionSignalsData.signals[i][7], SectionDMData.Coeff);//Math.ceil(Ebrake(signals[i][2],signals[i][7])/12.5)*12.5
+                }
+                for (int j = 0; j < SectionSignalsData.signals_len; j++) {
+                    if (**SectionSignalsData.signals[i][0] + **SectionSignalsData.signals[i][3] <= **SectionSignalsData.signals[j][0]) {
+                        SectionSignalsData.signals[i][8][0][0] = **SectionSignalsData.signals[j][0];
+                        SectionSignalsData.signals[i][8][0][1] = **SectionSignalsData.signals[j][6];
+                        SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 2 - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 2 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 2 - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 2 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 1 - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 1 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 1 - SectionDMData.interval * spd_heigh / 10);
+                        SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 1 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10);
+                        
+                        /*ctx.textAlign = 'right';
+                        ctx.fillText((signals[i][2]).toString() + 'Ñ{Ñ}Ñâ' + (signals[i][3]).toString() + 'Ñ}ÑyÑ~' + (signals[i][8][0][0] - signals[i][0]).toString() + 'ÑÜÑpÑ{ÑÑ', signals[i][0] + st_A, signals[i][8][0][1] - interval * spd_heigh / 10 + 5)
+                        ctx.stroke();
+                        if (signals[j][12] != undefined) {
+                            signals[i][8][0] = [signals[j][11], signals[j][12]];
+                        }
+                        //console.log('hahaha');
+                        break*/
+                        break;
+                    }
+                }
+                SectionSignalsData.signals[i][8][1] = SectionSignalsData.signals[n_old][8][0];
+                SectionSignalsData.signals[i][8][2] = SectionSignalsData.signals[n_old][8][1];
+                SectionSignalsData.signals[i][8][3] = SectionSignalsData.signals[n_old][8][2];
+
+
+
+                /*if (signals[i][1] != 1) {  //ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑç
+                    ctx.beginPath();
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = 'black';
+                    ctx.moveTo(signals[i][8][1][0] + st_A, signals[i][8][1][1]);
+                    ctx.lineTo(signals[i][0] + st_A + 12.5, signals[i][8][1][1]);
+                    let avtostop = 1;
+                    ctx.lineTo(signals[i][0] + st_A + 12.5, signals[i][8][1][1] - avtostop * spd_heigh / 10); //ÑrÑÇÑuÑ}Ñë ÑÄÑÑÑ{ÑÇÑçÑÑÑyÑë ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑp
+                    ctx.moveTo(signals[i][0] + st_A + 20, signals[i][8][1][1]);
+                    ctx.lineTo(signals[i][0] + st_A + 20, signals[i][8][1][1] - avtostop * spd_heigh / 10);
+                    ctx.lineTo(signals[i][0] + st_A, signals[i][8][1][1] - avtostop * spd_heigh / 10);
+                    ctx.stroke();
+                    signals[i][8][1][1] -= avtostop * spd_heigh / 10
+                }
+
+                if (signals[i][1] != 1 & i > 0) { //ÑUÑpÑ{ÑÖÑ|ÑéÑÑÑpÑÑÑyÑrÑç
+                    //fackTime
+                    //-Ebrake(speedLimit(Calculated[j][0]),Profile(Calculated[j][0])[1])*1.15
+                    for (j in Calculated) {
+                        //let spd = speedLimit(Calculated[j][0])
+                        let spd = Calculated[j][1]
+                            let pst
+                            if (FackMethod == 0) {
+                                pst = Ebrake(spd, Profile(Calculated[j][0])[0]) * 1.15
+                            }
+                        if (FackMethod == 1) {
+                            if (Calculated[j][0] > signals[i][0] - 500) pst = AccBrake(spd, Calculated[j][0])//*1.5
+                        }
+                        if (signals[i][0] - st_len / 2 - pst <= Calculated[j][0]) {
+                            fackTime = endy - (Calculated[j][2] + interval) * spd_heigh / 10
+
+                                ctx.beginPath();
+                            ctx.strokeStyle = '#6666FF'
+                                ctx.lineWidth = 1.75
+                                ctx.moveTo(Calculated[j][0] + st_len / 2 + st_A, fackTime);
+                            ctx.lineTo(Calculated[j][0] + st_len / 2 + st_A, fackTime + 2 * spd_heigh / 10);
+                            ctx.lineTo(signals[i][0] + st_A - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
+                            ctx.lineTo(signals[i][0] + st_A - 5 - 3, fackTime + 8 - 10 + 2 * spd_heigh / 10);
+                            ctx.lineTo(signals[i][0] + st_A - 5 - 3, fackTime + 12 - 10 + 2 * spd_heigh / 10);
+                            ctx.lineTo(signals[i][0] + st_A - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
+                            ctx.stroke();
+                            ctx.textAlign = 'right'
+                                ctx.fillStyle = '#6666FF'
+                                ctx.font = '13px Bahnschrift Light';
+                            ctx.fillText(Math.ceil(pst).toString() + 'Ñ}', signals[i][0] + st_A - 10, fackTime + 7 - 10 + 2 * spd_heigh / 10)
+                                ctx.fillText(Math.ceil(spd).toString() + 'Ñ{Ñ}/Ñâ', signals[i][0] + st_A - 10, fackTime + 21 - 10 + 2 * spd_heigh / 10)
+                                ctx.fillStyle = 'black'
+                                ctx.font = '17px Bahnschrift Light';
+
+                            break
+                        }
+                    }
+                    ctx.textAlign = 'left'
+                        //ctx.fillText((Math.floor((signals[i][8][1][1]-signals[i][5])/spd_heigh*10)).toString()+'c.',signals[i][0]+st_A+7,signals[i][5]+15);
+                        ctx.fillText((Math.floor((signals[i][8][1][1] - fackTime - 2 * spd_heigh / 10) / spd_heigh * 10)).toString() + 'c.', signals[i][0] + st_A + 7, signals[i][5] + 15);
+                }
+
+                /////////////////////////////
+                let m; let z = signals[i][1];
+                m = [signals[i][0] + st_A, signals[i][4]];
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.strokeStyle = 'red';
+                ctx.moveTo(m[0], m[1]);
+                m = [signals[i][0] + st_A, signals[i][8][1][1]];
+                ctx.lineTo(m[0], m[1]);
+                ctx.stroke();
+                if (z == 3 | z == 4) {
+                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8] //ÑNÑu ÑÇÑpÑqÑÄÑÑÑpÑuÑÑ(
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'yellow';
+                    ctx.moveTo(m[0], m[1]);
+                    m = [signals[i][0] + st_A, signals[i][8][2][1]];
+                    ctx.lineTo(m[0], m[1]);
+                    ctx.stroke();
+                }
+                if (z == 4) {
+                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8]
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'blue';
+                    ctx.moveTo(m[0], m[1]);
+                    m = [signals[i][0] + st_A, signals[i][8][3][1]];
+                    ctx.lineTo(m[0], m[1]);
+                    ctx.stroke();
+                }
+                if (z == 2 | z == 3 | z == 4) {
+                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8]
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'green';
+                }
+                ctx.beginPath();
+                ctx.moveTo(m[0], m[1]);
+                m = [signals[i][0] + st_A, signals[i][5]];
+                ctx.lineTo(m[0], m[1]);
+                ctx.stroke();
+                n_old = i;*/
+            }
+        }
+    }
 }
 
 void setup() {
@@ -1082,17 +1625,12 @@ void process_input() {
 void update() {
 
 }
+
 void render() {
+    font = TTF_OpenFont("bahnschrift.ttf", 15);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 175, 175, 175, 255);
-    TTF_Font* font;
-    font = TTF_OpenFont("bahnschrift.ttf", 15);
-    SDL_Color font_color = {0, 0, 0};
-    SDL_Surface* surface;
-    SDL_Texture* texture;
-    int texW;
-    int texH;
     /*for (let i = 0; i < heigh; i++) {
         ctx.fillText((heigh * 10 - i * 10).toString(), startx - 12.5, starty + i * spd_heigh + 12 / 2);
         ctx.moveTo(startx, starty + i * spd_heigh);
@@ -1105,7 +1643,6 @@ void render() {
         surface = TTF_RenderText_Solid(font, &n_str, font_color);
         texture = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
-        //SDL_Rect dstrect = { 12.5 * dist_len, starty + i * spd_heigh - 12 / 2, texW, texH };
         SDL_Rect dstrect = { startx * dist_len - texW - 5, starty + i * spd_heigh - 12 / 2, texW, texH };
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
@@ -1118,25 +1655,164 @@ void render() {
     SDL_RenderDrawLine(renderer, endx * dist_len, 0, endx * dist_len, endy);
 
     SDL_RenderDrawLine(renderer, st_A * dist_len, 0, st_A * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_A - SectionData.st_len / 2) * dist_len, endy + 25, (st_A - SectionData.st_len / 2) * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_A - SectionData.st_len / 2) * dist_len, endy + 15, (st_A + SectionData.st_len / 2) * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_A + SectionData.st_len / 2) * dist_len, endy + 15, (st_A + SectionData.st_len / 2) * dist_len, endy + 25);
+    SDL_RenderDrawLine(renderer, (st_A - SectionDMData.st_len / 2) * dist_len, endy + 25, (st_A - SectionDMData.st_len / 2) * dist_len, endy + 15);
+    SDL_RenderDrawLine(renderer, (st_A - SectionDMData.st_len / 2) * dist_len, endy + 15, (st_A + SectionDMData.st_len / 2) * dist_len, endy + 15);
+    SDL_RenderDrawLine(renderer, (st_A + SectionDMData.st_len / 2) * dist_len, endy + 15, (st_A + SectionDMData.st_len / 2) * dist_len, endy + 25);
 
     SDL_RenderDrawLine(renderer, st_B * dist_len, 0, st_B * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_B - SectionData.st_len / 2) * dist_len, endy + 25, (st_B - SectionData.st_len / 2) * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_B - SectionData.st_len / 2) * dist_len, endy + 15, (st_B + SectionData.st_len / 2) * dist_len, endy + 15);
-    SDL_RenderDrawLine(renderer, (st_B + SectionData.st_len / 2) * dist_len, endy + 15, (st_B + SectionData.st_len / 2) * dist_len, endy + 25);
+    SDL_RenderDrawLine(renderer, (st_B - SectionDMData.st_len / 2) * dist_len, endy + 25, (st_B - SectionDMData.st_len / 2) * dist_len, endy + 15);
+    SDL_RenderDrawLine(renderer, (st_B - SectionDMData.st_len / 2) * dist_len, endy + 15, (st_B + SectionDMData.st_len / 2) * dist_len, endy + 15);
+    SDL_RenderDrawLine(renderer, (st_B + SectionDMData.st_len / 2) * dist_len, endy + 15, (st_B + SectionDMData.st_len / 2) * dist_len, endy + 25);
 
     int sdvig = 0;
     for (int i = 0; i < Calculated_Length - 1; i++) {
-        if (i == stop1) sdvig = -SectionData.st_len;
-        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionData.st_len / 2 + sdvig) * dist_len, endy - Calculated[i][1] * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionData.st_len / 2 + sdvig) * dist_len, endy - Calculated[i + 1][1] * spd_heigh / 10);
-        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionData.st_len / 2) * dist_len, endy - Calculated[i][2] * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionData.st_len / 2) * dist_len, endy - Calculated[i + 1][2] * spd_heigh / 10);
-        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] - SectionData.st_len / 2) * dist_len, endy - Calculated[i][2] * spd_heigh / 10, (st_A + Calculated[i + 1][0] - SectionData.st_len / 2) * dist_len, endy - Calculated[i + 1][2] * spd_heigh / 10);
-        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionData.st_len / 2) * dist_len, endy - (Calculated[i][2] + SectionData.interval) * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionData.st_len / 2) * dist_len, endy - (Calculated[i + 1][2] + SectionData.interval) * spd_heigh / 10);
+        if (i == stop1) sdvig = -SectionDMData.st_len;
+        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionDMData.st_len / 2 + sdvig) * dist_len, endy - Calculated[i][1] * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionDMData.st_len / 2 + sdvig) * dist_len, endy - Calculated[i + 1][1] * spd_heigh / 10);
+        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionDMData.st_len / 2) * dist_len, endy - Calculated[i][2] * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionDMData.st_len / 2) * dist_len, endy - Calculated[i + 1][2] * spd_heigh / 10);
+        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] - SectionDMData.st_len / 2) * dist_len, endy - Calculated[i][2] * spd_heigh / 10, (st_A + Calculated[i + 1][0] - SectionDMData.st_len / 2) * dist_len, endy - Calculated[i + 1][2] * spd_heigh / 10);
+        SDL_RenderDrawLine(renderer, (st_A + Calculated[i][0] + SectionDMData.st_len / 2) * dist_len, endy - (Calculated[i][2] + SectionDMData.interval) * spd_heigh / 10, (st_A + Calculated[i + 1][0] + SectionDMData.st_len / 2) * dist_len, endy - (Calculated[i + 1][2] + SectionDMData.interval) * spd_heigh / 10);
     }
-    SDL_RenderDrawLine(renderer, startx * dist_len, endy - SectionData.interval * spd_heigh / 10, (st_A + SectionData.st_len / 2) * dist_len, endy - SectionData.interval * spd_heigh / 10);
+    SDL_RenderDrawLine(renderer, startx * dist_len, endy - SectionDMData.interval * spd_heigh / 10, (st_A + SectionDMData.st_len / 2) * dist_len, endy - SectionDMData.interval * spd_heigh / 10);
 
+    const int profile_y[2] = {endy + 125, endy + 162.5};
+    SDL_RenderDrawLine(renderer, st_A * dist_len, profile_y[0], st_B * dist_len, profile_y[0]);
+    SDL_RenderDrawLine(renderer, st_A * dist_len, profile_y[1], st_B * dist_len, profile_y[1]);
+    float p_old = NAN;
+    float i_old = 0;
+    for (int i = 0; i <= LenByTracks; i++) {
+        float p = getProfileByTracks(i)[0];
+        if (p != p_old | i == floor(LenByTracks) | i == 0) {
+            SDL_RenderDrawLine(renderer, (i + st_A) * dist_len, profile_y[0], (i + st_A) * dist_len, profile_y[1]);
+            if (p_old == 0) {
+                char* n_str[5];
+                _itoa(p_old, &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (i / 2 + i_old / 2 + st_A) * dist_len - texW/2, profile_y[0] + 3, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                _itoa((i - i_old), &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect1 = { (i / 2 + i_old / 2 + st_A) * dist_len - texW / 2, profile_y[1] - 15, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect1);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                SDL_RenderDrawLine(renderer, (i_old + st_A) * dist_len, profile_y[0] / 2 + profile_y[1] / 2, (i + st_A) * dist_len, profile_y[0] / 2 + profile_y[1] / 2);
+            }
+            if (p_old > 0) {
+                char* n_str[5];
+                _itoa(p_old, &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (i_old + st_A + 1) * dist_len, profile_y[0] + 1, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                _itoa((i - i_old), &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect1 = { (i + st_A) * dist_len - texW, profile_y[1] - 13, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect1);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                SDL_RenderDrawLine(renderer, (i_old + st_A) * dist_len, profile_y[1], (i + st_A) * dist_len, profile_y[0]);
+            }
+            if (p_old < 0) {
+                char* n_str[5];
+                _itoa(-p_old, &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (i + st_A) * dist_len - texW, profile_y[0] + 1, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                _itoa((i - i_old), &n_str, 10);
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect1 = { (i_old + st_A + 1) * dist_len, profile_y[1] - 13, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect1);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                SDL_RenderDrawLine(renderer, (i_old + st_A) * dist_len, profile_y[0], (i + st_A) * dist_len, profile_y[1]);
+            }
+            i_old = i;
+        }
+        p_old = p;
+    }
+
+    const float plan_y = endy + 200;
+    float P_old = NAN;
+    int I_old = 0;
+    for (int i = 0; i <= LenByTracks; i++) {
+        float p = getProfileByTracks(i)[1];
+        if (p != P_old | i == floor(LenByTracks)) {
+            if (P_old == 0) {
+                char* n_str[5];
+                _itoa((i - I_old), &n_str, 10);
+                //strcat(n_str, "m");
+                surface = TTF_RenderText_Solid(font, &n_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (I_old / 2 + i / 2 + st_A) * dist_len - texW / 2, plan_y - texH - 1, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                SDL_RenderDrawLine(renderer, (I_old + st_A) * dist_len, plan_y, (i + st_A) * dist_len, plan_y);
+            }
+            if (P_old > 0) {
+                char* n_str[5];
+                char* m_str[5];
+                char* nm_str[10];
+                _itoa((i - I_old), &m_str, 10);
+                _itoa((P_old), &n_str, 10);
+                strcpy(nm_str, n_str);
+                strcat(nm_str, "/");
+                strcat(nm_str, m_str);
+                surface = TTF_RenderText_Solid(font, &nm_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (I_old / 2 + i / 2 + st_A) * dist_len - texW / 2, plan_y - texH - 1 + 15, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                DrawCircle(renderer, (I_old + st_A) * dist_len + 15, plan_y, 15, 3);
+                DrawCircle(renderer, (i + st_A) * dist_len - 15, plan_y, 15, 4);
+                SDL_RenderDrawLine(renderer, (I_old + st_A) * dist_len + 15, plan_y + 15, (i + st_A) * dist_len - 15, plan_y + 15);
+            }
+            if (P_old < 0) {
+                char* n_str[5];
+                char* m_str[5];
+                char* nm_str[10];
+                _itoa((i - I_old), &m_str, 10);
+                _itoa((-P_old), &n_str, 10);
+                strcpy(nm_str, n_str);
+                strcat(nm_str, "/");
+                strcat(nm_str, m_str);
+                surface = TTF_RenderText_Solid(font, &nm_str, font_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                SDL_Rect dstrect = { (I_old / 2 + i / 2 + st_A) * dist_len - texW / 2, plan_y +3 - 15, texW, texH };
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+                DrawCircle(renderer, (I_old + st_A) * dist_len + 15, plan_y, 15, 2);
+                DrawCircle(renderer, (i + st_A) * dist_len - 15, plan_y, 15, 1);
+                SDL_RenderDrawLine(renderer, (I_old + st_A)* dist_len + 15, plan_y - 15, (i + st_A)* dist_len - 15, plan_y - 15);
+            }
+            I_old = i;
+        }
+        P_old = p;
+    }
+    liney = endy + 62.5;
+    drawsignalisation();
     SDL_RenderPresent(renderer);
 }
 void destroy_window() {
@@ -1151,8 +1827,11 @@ void destroy_window() {
 int main() {
     choose_line();
     choose_section();
-    //choose_signalisation();
+    choose_signalisation();
 
+    /*for (int i = 0; i < LenByTracks; i++) {
+        printf("[%i] = [%f, %f]\n", i, getProfileByTracks(i)[0], getProfileByTracks(i)[1]);
+    }*/
 
     int running_program = 1;
     while (running_program) {
@@ -1164,7 +1843,7 @@ int main() {
             render();
         }
         destroy_window();
-        printf("0 - exit\n1 - reload\n2 - change signalisation\n3 - change section\n4 - change line\n");
+        printf("\n0 - exit\n1 - reload\n2 - change signalisation\n3 - change section\n4 - change line\n");
         int choise;
         scanf("%1i", &choise);
         switch (choise) {
@@ -1181,6 +1860,9 @@ int main() {
                 //choose_signalisation();
                 break;
             case 4:
+                free(ParsedData);
+                free(EndOfEachTrack);
+                free(LenOfTracks);
                 choose_line();
                 choose_section();
                 //choose_signalisation();
