@@ -1182,6 +1182,80 @@ _DMcalculationBinToArray:
     fclose(BINDM);
     return 0;
 }
+void thinksignalisation() {
+    //DrawSignal(100, 12345, 1);
+    //printf("VKSy (sprava nalevo):\n");
+    int n_old;
+    for (int i = 0; i < SectionSignalsData.signals_len; i++) if (**SectionSignalsData.signals[i][1] != 0) n_old = i;
+    for (int i = SectionSignalsData.signals_len - 1; i >= 0; i--) {
+        for (int j = 0; j < Calculated_Length; j++) {
+            if (**SectionSignalsData.signals[i][0] - SectionDMData.st_len / 2 <= Calculated[j][0]) {
+                **SectionSignalsData.signals[i][4] = endy - (Calculated[j][2] * spd_heigh / 10);
+                **SectionSignalsData.signals[i][5] = endy - (Calculated[j][2] + SectionDMData.interval) * spd_heigh / 10;
+                break;
+            }
+        }
+        for (int j = 0; j < Calculated_Length; j++) {
+            if (**SectionSignalsData.signals[i][0] + SectionDMData.st_len / 2 <= Calculated[j][0]) {
+                **SectionSignalsData.signals[i][6] = endy - (Calculated[j][2] * spd_heigh / 10);
+                break;
+            }
+        }
+        //printf("%f\n", **SectionSignalsData.signals[i][6]);
+        **SectionSignalsData.signals[i][7] = getProfileByTracks(**SectionSignalsData.signals[i][0])[0];
+        //console.log(signals[i])
+        //DrawSignal(signals[i][0],'êMçÜ',signals[i][1])
+
+        //VKS sektion-------------------------------------------------
+        /*if (**SectionSignalsData.signals[i + 1] != NAN) {
+            if (**SectionSignalsData.signals[i + 1][10] != NAN) {
+                float vksSpeed;
+                for (int j = stop1; j < Calculated_Length; j++) {
+                    vksSpeed = Calculated[j][1];
+                    if (**SectionSignalsData.signals[i][10] > 0) vksSpeed = **SectionSignalsData.signals[i][10];
+                    if (**SectionSignalsData.signals[i][10] < 0) vksSpeed = Calculated[j][1] + **SectionSignalsData.signals[i][10];
+                    if (Calculated[j][0] + AccBrake(vksSpeed) >= **SectionSignalsData.signals[i + 1][0] + SectionDMData.st_len / 2) {
+                        **SectionSignalsData.signals[i + 1][11] = Calculated[j][0] - SectionDMData.st_len / 2;
+                        for (int k = 0; k < Calculated_Length; k++) {
+                            if (**SectionSignalsData.signals[i + 1][11] + SectionDMData.st_len / 2 <= Calculated[k][0]) {
+                                **SectionSignalsData.signals[i + 1][12] = endy - (Calculated[k][2] * spd_heigh / 10);
+                                break;
+                            }
+                        }
+                        printf("VKS % f m.\n", **SectionSignalsData.signals[i + 1][11] - **SectionSignalsData.signals[i][0]);
+                        DrawSignal(**SectionSignalsData.signals[i + 1][11], -1, -1);
+                        break;
+                    }
+                }
+            }
+        }*/
+        if (SectionSignalsData.CalcType == 1 | SectionSignalsData.CalcType == 2) {
+            if (**SectionSignalsData.signals[i][1] != 0) {
+                if (1 | **SectionSignalsData.signals[i][3] == NAN) {
+                    **SectionSignalsData.signals[i][3] = Ebrake(**SectionSignalsData.signals[i][2], **SectionSignalsData.signals[i][7], SectionDMData.Coeff);//Math.ceil(Ebrake(signals[i][2],signals[i][7])/12.5)*12.5
+                }
+                for (int j = 0; j < SectionSignalsData.signals_len; j++) {
+                    if (**SectionSignalsData.signals[i][0] + **SectionSignalsData.signals[i][3] <= **SectionSignalsData.signals[j][0]) {
+                        SectionSignalsData.signals[i][8][0][0] = **SectionSignalsData.signals[j][0];
+                        SectionSignalsData.signals[i][8][0][1] = **SectionSignalsData.signals[j][6];
+                        break;
+                    }
+                }
+                SectionSignalsData.signals[i][8][1][0] = SectionSignalsData.signals[n_old][8][0][0];
+                SectionSignalsData.signals[i][8][2][0] = SectionSignalsData.signals[n_old][8][1][0];
+                SectionSignalsData.signals[i][8][3][0] = SectionSignalsData.signals[n_old][8][2][0];
+                SectionSignalsData.signals[i][8][1][1] = SectionSignalsData.signals[n_old][8][0][1];
+                SectionSignalsData.signals[i][8][2][1] = SectionSignalsData.signals[n_old][8][1][1];
+                SectionSignalsData.signals[i][8][3][1] = SectionSignalsData.signals[n_old][8][2][1];
+                if (**SectionSignalsData.signals[i][1] != 1) {  //ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑç
+                    float avtostop = 1;
+                    SectionSignalsData.signals[i][8][1][1] -= avtostop * spd_heigh / 10;
+                }
+                n_old = i;
+            }
+        }
+    }
+}
 //Calc.c Å™
 //////////
 
@@ -1299,6 +1373,7 @@ void choose_signalisation() {
             SectionSignalsData.NumerationStart += 2;
         }
     }
+    thinksignalisation();
 }
 //Previous main() Å™
 ///////////////////
@@ -1423,11 +1498,11 @@ void drawsignalisation() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderDrawLine(renderer, 0, liney, endx * dist_len, liney);
     //DrawSignal(100, 12345, 1);
-    printf("VKSy (sprava nalevo):\n");
+    //printf("VKSy (sprava nalevo):\n");
     int n_old;
-    for (int i = 0; i < SectionSignalsData.signals_len; i++) if (SectionSignalsData.signals[i][1] != 0) n_old = i;
+    for (int i = 0; i < SectionSignalsData.signals_len; i++) if (**SectionSignalsData.signals[i][1] != 0) n_old = i;
     for (int i = SectionSignalsData.signals_len - 1; i >= 0; i--) {
-        for (int j = 0; j < SectionSignalsData.signals_len; j++) {
+        for (int j = 0; j < Calculated_Length; j++) {
             if (**SectionSignalsData.signals[i][0] - SectionDMData.st_len / 2 <= Calculated[j][0]) {
                 **SectionSignalsData.signals[i][4] = endy - (Calculated[j][2] * spd_heigh / 10);
                 **SectionSignalsData.signals[i][5] = endy - (Calculated[j][2] + SectionDMData.interval) * spd_heigh / 10;
@@ -1488,119 +1563,158 @@ void drawsignalisation() {
                         SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 1 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 1 - SectionDMData.interval * spd_heigh / 10);
                         SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 1 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10);
                         
-                        /*ctx.textAlign = 'right';
-                        ctx.fillText((signals[i][2]).toString() + 'Ñ{Ñ}Ñâ' + (signals[i][3]).toString() + 'Ñ}ÑyÑ~' + (signals[i][8][0][0] - signals[i][0]).toString() + 'ÑÜÑpÑ{ÑÑ', signals[i][0] + st_A, signals[i][8][0][1] - interval * spd_heigh / 10 + 5)
-                        ctx.stroke();
-                        if (signals[j][12] != undefined) {
+                        char n_str[100];
+                        char* n[10];
+                        _itoa(**SectionSignalsData.signals[i][2], &n, 10);
+                        strcpy(n_str, n);
+                        strcat(n_str, "km/h");
+                        _itoa(**SectionSignalsData.signals[i][3], &n, 10);
+                        strcat(n_str, n);
+                        strcat(n_str, "min");
+                        _itoa(SectionSignalsData.signals[i][8][0][0] - **SectionSignalsData.signals[i][0], &n, 10);
+                        strcat(n_str, n);
+                        strcat(n_str, "fakt");
+
+                        surface = TTF_RenderText_Solid(font, n_str, font_color);
+                        texture = SDL_CreateTextureFromSurface(renderer, surface);
+                        SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                        SDL_Rect dstrect = { (**SectionSignalsData.signals[i][0] + st_A) * dist_len - texW, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10 + 5 - texH, texW, texH };
+                        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                        SDL_DestroyTexture(texture);
+                        SDL_FreeSurface(surface);
+
+                        /*if (signals[j][12] != undefined) {
                             signals[i][8][0] = [signals[j][11], signals[j][12]];
                         }
-                        //console.log('hahaha');
-                        break*/
+                        //console.log('hahaha');*/
                         break;
                     }
                 }
-                SectionSignalsData.signals[i][8][1] = SectionSignalsData.signals[n_old][8][0];
-                SectionSignalsData.signals[i][8][2] = SectionSignalsData.signals[n_old][8][1];
-                SectionSignalsData.signals[i][8][3] = SectionSignalsData.signals[n_old][8][2];
+                SectionSignalsData.signals[i][8][1][0] = SectionSignalsData.signals[n_old][8][0][0];
+                SectionSignalsData.signals[i][8][2][0] = SectionSignalsData.signals[n_old][8][1][0];
+                SectionSignalsData.signals[i][8][3][0] = SectionSignalsData.signals[n_old][8][2][0];
 
+                SectionSignalsData.signals[i][8][1][1] = SectionSignalsData.signals[n_old][8][0][1];
+                SectionSignalsData.signals[i][8][2][1] = SectionSignalsData.signals[n_old][8][1][1];
+                SectionSignalsData.signals[i][8][3][1] = SectionSignalsData.signals[n_old][8][2][1];
 
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-                /*if (signals[i][1] != 1) {  //ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑç
-                    ctx.beginPath();
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = 'black';
-                    ctx.moveTo(signals[i][8][1][0] + st_A, signals[i][8][1][1]);
-                    ctx.lineTo(signals[i][0] + st_A + 12.5, signals[i][8][1][1]);
-                    let avtostop = 1;
-                    ctx.lineTo(signals[i][0] + st_A + 12.5, signals[i][8][1][1] - avtostop * spd_heigh / 10); //ÑrÑÇÑuÑ}Ñë ÑÄÑÑÑ{ÑÇÑçÑÑÑyÑë ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑp
-                    ctx.moveTo(signals[i][0] + st_A + 20, signals[i][8][1][1]);
-                    ctx.lineTo(signals[i][0] + st_A + 20, signals[i][8][1][1] - avtostop * spd_heigh / 10);
-                    ctx.lineTo(signals[i][0] + st_A, signals[i][8][1][1] - avtostop * spd_heigh / 10);
-                    ctx.stroke();
-                    signals[i][8][1][1] -= avtostop * spd_heigh / 10
+                if (**SectionSignalsData.signals[i][1] != 1) {  //ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑç
+                    SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][1][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][1][1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 12.5, SectionSignalsData.signals[i][8][1][1]);
+                    float avtostop = 1;
+                    SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 12.5, SectionSignalsData.signals[i][8][1][1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 12.5, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10); //ÑrÑÇÑuÑ}Ñë ÑÄÑÑÑ{ÑÇÑçÑÑÑyÑë ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑp
+                    SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10);
+                    SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10);
+                    SectionSignalsData.signals[i][8][1][1] -= avtostop * spd_heigh / 10;
                 }
 
-                if (signals[i][1] != 1 & i > 0) { //ÑUÑpÑ{ÑÖÑ|ÑéÑÑÑpÑÑÑyÑrÑç
-                    //fackTime
-                    //-Ebrake(speedLimit(Calculated[j][0]),Profile(Calculated[j][0])[1])*1.15
-                    for (j in Calculated) {
-                        //let spd = speedLimit(Calculated[j][0])
-                        let spd = Calculated[j][1]
-                            let pst
-                            if (FackMethod == 0) {
-                                pst = Ebrake(spd, Profile(Calculated[j][0])[0]) * 1.15
-                            }
-                        if (FackMethod == 1) {
-                            if (Calculated[j][0] > signals[i][0] - 500) pst = AccBrake(spd, Calculated[j][0])//*1.5
+                if (**SectionSignalsData.signals[i][1] != 1 & i > 0) { //ÑUÑpÑ{ÑÖÑ|ÑéÑÑÑpÑÑÑyÑrÑç
+                    float fackTime;
+                    TTF_Font* font2;
+                    font2 = TTF_OpenFont("bahnschrift.ttf", 13);
+                    for (int j = 0; j < Calculated_Length; j++) {
+                        float spd = Calculated[j][1];
+                        float pst;
+                        if (SectionSignalsData.FackMethod == 0) {
+                            pst = Ebrake(spd, getProfileByTracks(Calculated[j][0])[0], SectionDMData.Coeff) * 1.15;
                         }
-                        if (signals[i][0] - st_len / 2 - pst <= Calculated[j][0]) {
-                            fackTime = endy - (Calculated[j][2] + interval) * spd_heigh / 10
+                        if (SectionSignalsData.FackMethod == 1) {
+                            if (Calculated[j][0] > **SectionSignalsData.signals[i][0] - 500) pst = AccBrake(spd, Calculated[j][0]);//*1.5
+                        }
+                        if (**SectionSignalsData.signals[i][0] - SectionDMData.st_len / 2 - pst <= Calculated[j][0]) {
+                            
+                            fackTime = endy - (Calculated[j][2] + SectionDMData.interval) * spd_heigh / 10;
+                            SDL_SetRenderDrawColor(renderer, 66, 135, 245, 255);
+                            SDL_RenderDrawLine(renderer, (Calculated[j][0] + SectionDMData.st_len / 2 + st_A) * dist_len, fackTime, (Calculated[j][0] + SectionDMData.st_len / 2 + st_A) * dist_len, fackTime + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (Calculated[j][0] + SectionDMData.st_len / 2 + st_A) * dist_len, fackTime + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 8 - 10 + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 8 - 10 + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 12 - 10 + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 12 - 10 + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 9 - 10 + 2 * spd_heigh / 10);
+                            SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 5 - 3, fackTime + 11 - 10 + 2 * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
 
-                                ctx.beginPath();
-                            ctx.strokeStyle = '#6666FF'
-                                ctx.lineWidth = 1.75
-                                ctx.moveTo(Calculated[j][0] + st_len / 2 + st_A, fackTime);
-                            ctx.lineTo(Calculated[j][0] + st_len / 2 + st_A, fackTime + 2 * spd_heigh / 10);
-                            ctx.lineTo(signals[i][0] + st_A - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
-                            ctx.lineTo(signals[i][0] + st_A - 5 - 3, fackTime + 8 - 10 + 2 * spd_heigh / 10);
-                            ctx.lineTo(signals[i][0] + st_A - 5 - 3, fackTime + 12 - 10 + 2 * spd_heigh / 10);
-                            ctx.lineTo(signals[i][0] + st_A - 3, fackTime + 10 - 10 + 2 * spd_heigh / 10);
-                            ctx.stroke();
-                            ctx.textAlign = 'right'
-                                ctx.fillStyle = '#6666FF'
-                                ctx.font = '13px Bahnschrift Light';
-                            ctx.fillText(Math.ceil(pst).toString() + 'Ñ}', signals[i][0] + st_A - 10, fackTime + 7 - 10 + 2 * spd_heigh / 10)
-                                ctx.fillText(Math.ceil(spd).toString() + 'Ñ{Ñ}/Ñâ', signals[i][0] + st_A - 10, fackTime + 21 - 10 + 2 * spd_heigh / 10)
-                                ctx.fillStyle = 'black'
-                                ctx.font = '17px Bahnschrift Light';
+                            
+                            SDL_Color blue_font_color = { 66, 135, 245 };
 
-                            break
+                            char n_str[100];
+                            char* n[10];
+                            _itoa(ceil(pst), &n, 10);
+                            strcpy(n_str, n);
+                            strcat(n_str, "m");
+                            surface = TTF_RenderText_Solid(font2, n_str, blue_font_color);
+                            texture = SDL_CreateTextureFromSurface(renderer, surface);
+                            SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                            SDL_Rect dstrect = { (**SectionSignalsData.signals[i][0] + st_A) * dist_len - texW - 10, fackTime + 7 - 6 + 2 * spd_heigh / 10 - texH, texW, texH };
+                            SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                            SDL_DestroyTexture(texture);
+                            SDL_FreeSurface(surface);
+
+                            _itoa(ceil(spd), &n, 10);
+                            strcpy(n_str, n);
+                            strcat(n_str, "km/h");
+                            surface = TTF_RenderText_Solid(font2, n_str, blue_font_color);
+                            texture = SDL_CreateTextureFromSurface(renderer, surface);
+                            SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                            SDL_Rect dstrect1 = { (**SectionSignalsData.signals[i][0] + st_A) * dist_len - texW - 10, fackTime + 21 - 3 - 4 + 2 * spd_heigh / 10 - texH, texW, texH };
+                            SDL_RenderCopy(renderer, texture, NULL, &dstrect1);
+                            SDL_DestroyTexture(texture);
+                            SDL_FreeSurface(surface);
+                            break;
                         }
                     }
-                    ctx.textAlign = 'left'
-                        //ctx.fillText((Math.floor((signals[i][8][1][1]-signals[i][5])/spd_heigh*10)).toString()+'c.',signals[i][0]+st_A+7,signals[i][5]+15);
-                        ctx.fillText((Math.floor((signals[i][8][1][1] - fackTime - 2 * spd_heigh / 10) / spd_heigh * 10)).toString() + 'c.', signals[i][0] + st_A + 7, signals[i][5] + 15);
+                    char n_str[100];
+                    char* n[10];
+                    _itoa(floor((SectionSignalsData.signals[i][8][1][1] - fackTime - 2 * spd_heigh / 10) / spd_heigh * 10), &n, 10);
+                    strcpy(n_str, n);
+                    strcat(n_str, "s.");
+                    surface = TTF_RenderText_Solid(font2, n_str, font_color);
+                    texture = SDL_CreateTextureFromSurface(renderer, surface);
+                    SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+                    SDL_Rect dstrect = { (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 5, **SectionSignalsData.signals[i][5], texW, texH };
+                    //printf("%f %f\n", (**SectionSignalsData.signals[i][0] + st_A)* dist_len + 7, **SectionSignalsData.signals[i][5] + 15);
+                    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                    SDL_DestroyTexture(texture);
+                    SDL_FreeSurface(surface);
                 }
 
                 /////////////////////////////
-                let m; let z = signals[i][1];
-                m = [signals[i][0] + st_A, signals[i][4]];
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.strokeStyle = 'red';
-                ctx.moveTo(m[0], m[1]);
-                m = [signals[i][0] + st_A, signals[i][8][1][1]];
-                ctx.lineTo(m[0], m[1]);
-                ctx.stroke();
+                float m[2] = { **SectionSignalsData.signals[i][0] + st_A, **SectionSignalsData.signals[i][4] };
+                float z = **SectionSignalsData.signals[i][1];
+
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+                SDL_RenderDrawLine(renderer, m[0] * dist_len, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][1][1]);
+                SDL_RenderDrawLine(renderer, m[0] * dist_len - 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 1, SectionSignalsData.signals[i][8][1][1]);
+                SDL_RenderDrawLine(renderer, m[0] * dist_len + 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 1, SectionSignalsData.signals[i][8][1][1]);
+                m[0] = **SectionSignalsData.signals[i][0] + st_A;
+                m[1] = SectionSignalsData.signals[i][8][1][1];
                 if (z == 3 | z == 4) {
-                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8] //ÑNÑu ÑÇÑpÑqÑÄÑÑÑpÑuÑÑ(
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'yellow';
-                    ctx.moveTo(m[0], m[1]);
-                    m = [signals[i][0] + st_A, signals[i][8][2][1]];
-                    ctx.lineTo(m[0], m[1]);
-                    ctx.stroke();
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 0);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][2][1]);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len - 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 1, SectionSignalsData.signals[i][8][2][1]);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len + 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 1, SectionSignalsData.signals[i][8][2][1]);
+                    m[0] = **SectionSignalsData.signals[i][0] + st_A;
+                    m[1] = SectionSignalsData.signals[i][8][2][1];
                 }
                 if (z == 4) {
-                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8]
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'blue';
-                    ctx.moveTo(m[0], m[1]);
-                    m = [signals[i][0] + st_A, signals[i][8][3][1]];
-                    ctx.lineTo(m[0], m[1]);
-                    ctx.stroke();
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 0);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][3][1]);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len - 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 1, SectionSignalsData.signals[i][8][3][1]);
+                    SDL_RenderDrawLine(renderer, m[0] * dist_len + 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 1, SectionSignalsData.signals[i][8][3][1]);
+                    m[0] = **SectionSignalsData.signals[i][0] + st_A;
+                    m[1] = SectionSignalsData.signals[i][8][3][1];
                 }
                 if (z == 2 | z == 3 | z == 4) {
-                    //if (m[1]>signals[n_old][5]) m[1]=signals[n_old][8]
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'green';
+                    SDL_SetRenderDrawColor(renderer, 0, 128, 0, 0);
                 }
-                ctx.beginPath();
-                ctx.moveTo(m[0], m[1]);
-                m = [signals[i][0] + st_A, signals[i][5]];
-                ctx.lineTo(m[0], m[1]);
-                ctx.stroke();
-                n_old = i;*/
+                SDL_RenderDrawLine(renderer, m[0] * dist_len, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len, **SectionSignalsData.signals[i][5]);
+                SDL_RenderDrawLine(renderer, m[0] * dist_len - 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len - 1, **SectionSignalsData.signals[i][5]);
+                SDL_RenderDrawLine(renderer, m[0] * dist_len + 1, m[1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 1, **SectionSignalsData.signals[i][5]);
+                m[0] = **SectionSignalsData.signals[i][0] + st_A;
+                m[1] = **SectionSignalsData.signals[i][5];
+                /////////////////////////////
+
+                n_old = i;
             }
         }
     }
@@ -1853,11 +1967,11 @@ int main() {
             case 1:
                 break;
             case 2:
-                //choose_signalisation();
+                choose_signalisation();
                 break;
             case 3:
                 choose_section();
-                //choose_signalisation();
+                choose_signalisation();
                 break;
             case 4:
                 free(ParsedData);
@@ -1865,7 +1979,7 @@ int main() {
                 free(LenOfTracks);
                 choose_line();
                 choose_section();
-                //choose_signalisation();
+                choose_signalisation();
                 break;
         }
     }
