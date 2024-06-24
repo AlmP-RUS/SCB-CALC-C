@@ -9,6 +9,7 @@
 #include <SDL_ttf.h>
 
 int canvas_window_is_running;
+int canvassignalseditingmode;
 struct DMStruct {
     char st_A_Name[51];
     char st_B_Name[51];
@@ -502,10 +503,12 @@ _ReadSectionSignalsFileFileScanagain:
             }
         }
     }
+
     SectionSignalsData.customNum = (int**)malloc(customNum_len * 2 * sizeof(int));
     for (int i = 0; i < customNum_len; i++) {
         SectionSignalsData.customNum[i] = (int*)malloc(2 * sizeof(int));
     }
+
     SectionSignalsData.signals_len = signals_len;
     SectionSignalsData.customNum_len = customNum_len;
 
@@ -1249,7 +1252,7 @@ void thinksignalisation() {
                 SectionSignalsData.signals[i][8][3][1] = SectionSignalsData.signals[n_old][8][2][1];
                 if (**SectionSignalsData.signals[i][1] != 1) {  //ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑç
                     float avtostop = 1;
-                    SectionSignalsData.signals[i][8][1][1] -= avtostop * spd_heigh / 10;
+                    //SectionSignalsData.signals[i][8][1][1] -= avtostop * spd_heigh / 10; //??????????????
                 }
                 n_old = i;
             }
@@ -1502,21 +1505,7 @@ void drawsignalisation() {
     int n_old;
     for (int i = 0; i < SectionSignalsData.signals_len; i++) if (**SectionSignalsData.signals[i][1] != 0) n_old = i;
     for (int i = SectionSignalsData.signals_len - 1; i >= 0; i--) {
-        for (int j = 0; j < Calculated_Length; j++) {
-            if (**SectionSignalsData.signals[i][0] - SectionDMData.st_len / 2 <= Calculated[j][0]) {
-                **SectionSignalsData.signals[i][4] = endy - (Calculated[j][2] * spd_heigh / 10);
-                **SectionSignalsData.signals[i][5] = endy - (Calculated[j][2] + SectionDMData.interval) * spd_heigh / 10;
-                break;
-            }
-        }
-        for (int j = 0; j < Calculated_Length; j++) {
-            if (**SectionSignalsData.signals[i][0] + SectionDMData.st_len / 2 <= Calculated[j][0]) {
-                **SectionSignalsData.signals[i][6] = endy - (Calculated[j][2] * spd_heigh / 10);
-                break;
-            }
-        }
         //printf("%f\n", **SectionSignalsData.signals[i][6]);
-        **SectionSignalsData.signals[i][7] = getProfileByTracks(**SectionSignalsData.signals[i][0])[0];
         //console.log(signals[i])
         //DrawSignal(signals[i][0],'êMçÜ',signals[i][1])
         DrawSignal(**SectionSignalsData.signals[i][0], **SectionSignalsData.signals[i][9], **SectionSignalsData.signals[i][1]);
@@ -1548,13 +1537,8 @@ void drawsignalisation() {
             // [ÑHÑpÑãÑyÑÑ.ÑTÑâ/ÑKÑÇÑpÑÉÑ~/ÑGÑuÑ|ÑÑ/ÑGÑH]
             if (**SectionSignalsData.signals[i][1] != 0) {
                 //ctx.fillText(signIsVisibleDist(Profile(signals[i][0])[1],6),signals[i][0]+st_A,endy+20) //ÑBÑyÑtÑyÑ}ÑÄÑÉÑÑÑé
-                if (1 | **SectionSignalsData.signals[i][3] == NAN) {
-                    **SectionSignalsData.signals[i][3] = Ebrake(**SectionSignalsData.signals[i][2], **SectionSignalsData.signals[i][7], SectionDMData.Coeff);//Math.ceil(Ebrake(signals[i][2],signals[i][7])/12.5)*12.5
-                }
                 for (int j = 0; j < SectionSignalsData.signals_len; j++) {
                     if (**SectionSignalsData.signals[i][0] + **SectionSignalsData.signals[i][3] <= **SectionSignalsData.signals[j][0]) {
-                        SectionSignalsData.signals[i][8][0][0] = **SectionSignalsData.signals[j][0];
-                        SectionSignalsData.signals[i][8][0][1] = **SectionSignalsData.signals[j][6];
                         SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10);
                         SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][0][1] - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 2 - SectionDMData.interval * spd_heigh / 10);
                         SDL_RenderDrawLine(renderer, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] - 2 - SectionDMData.interval * spd_heigh / 10, (SectionSignalsData.signals[i][8][0][0] + st_A) * dist_len - 5, SectionSignalsData.signals[i][8][0][1] + 2 - SectionDMData.interval * spd_heigh / 10);
@@ -1590,13 +1574,6 @@ void drawsignalisation() {
                         break;
                     }
                 }
-                SectionSignalsData.signals[i][8][1][0] = SectionSignalsData.signals[n_old][8][0][0];
-                SectionSignalsData.signals[i][8][2][0] = SectionSignalsData.signals[n_old][8][1][0];
-                SectionSignalsData.signals[i][8][3][0] = SectionSignalsData.signals[n_old][8][2][0];
-
-                SectionSignalsData.signals[i][8][1][1] = SectionSignalsData.signals[n_old][8][0][1];
-                SectionSignalsData.signals[i][8][2][1] = SectionSignalsData.signals[n_old][8][1][1];
-                SectionSignalsData.signals[i][8][3][1] = SectionSignalsData.signals[n_old][8][2][1];
 
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
@@ -1606,7 +1583,6 @@ void drawsignalisation() {
                     SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 12.5, SectionSignalsData.signals[i][8][1][1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 12.5, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10); //ÑrÑÇÑuÑ}Ñë ÑÄÑÑÑ{ÑÇÑçÑÑÑyÑë ÑpÑrÑÑÑÄÑÉÑÑÑÄÑÅÑp
                     SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1], (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10);
                     SDL_RenderDrawLine(renderer, (**SectionSignalsData.signals[i][0] + st_A) * dist_len + 20, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10, (**SectionSignalsData.signals[i][0] + st_A) * dist_len, SectionSignalsData.signals[i][8][1][1] - avtostop * spd_heigh / 10);
-                    SectionSignalsData.signals[i][8][1][1] -= avtostop * spd_heigh / 10;
                 }
 
                 if (**SectionSignalsData.signals[i][1] != 1 & i > 0) { //ÑUÑpÑ{ÑÖÑ|ÑéÑÑÑpÑÑÑyÑrÑç
@@ -1720,8 +1696,10 @@ void drawsignalisation() {
     }
 }
 
+float chooserectnagle_x;
+int choosensignal = 0;
 void setup() {
-
+    canvassignalseditingmode = 0;
 }
 void process_input() {
     SDL_Event event;
@@ -1733,11 +1711,28 @@ void process_input() {
     case SDL_KEYDOWN:
         if (event.key.keysym.sym == SDLK_ESCAPE)
             canvas_window_is_running = FALSE;
+        if (event.key.keysym.sym == SDLK_p) {
+            canvassignalseditingmode = (canvassignalseditingmode + 1) % 3;
+        }
+        if (canvassignalseditingmode == 1 & event.key.keysym.sym == SDLK_RIGHT) {
+            choosensignal = (choosensignal + 1) % SectionSignalsData.signals_len;
+        }
+        if (canvassignalseditingmode == 1 & event.key.keysym.sym == SDLK_LEFT) {
+            choosensignal = (choosensignal + SectionSignalsData.signals_len - 1) % SectionSignalsData.signals_len;
+        }
+        if (canvassignalseditingmode == 2 & event.key.keysym.sym == SDLK_RIGHT) {
+            **SectionSignalsData.signals[choosensignal][0] += 12.5;
+            thinksignalisation();
+        }
+        if (canvassignalseditingmode == 2 & event.key.keysym.sym == SDLK_LEFT) {
+            **SectionSignalsData.signals[choosensignal][0] -= 12.5;
+            thinksignalisation();
+        }
         break;
     }
 }
 void update() {
-
+    chooserectnagle_x = **SectionSignalsData.signals[choosensignal][0];
 }
 
 void render() {
@@ -1927,6 +1922,22 @@ void render() {
     }
     liney = endy + 62.5;
     drawsignalisation();
+
+    if (canvassignalseditingmode != 0) {
+        if (canvassignalseditingmode == 1) {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+        }
+        else if (canvassignalseditingmode == 2) {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+        }
+        SDL_Rect rect;
+        rect.x = (chooserectnagle_x + st_A) * dist_len - 10;
+        rect.y = endy + 55;
+        rect.w = 50;
+        rect.h = 50;
+        SDL_RenderDrawRect(renderer, &rect);
+    }
+
     SDL_RenderPresent(renderer);
 }
 void destroy_window() {
@@ -1979,7 +1990,7 @@ int main() {
                 free(LenOfTracks);
                 choose_line();
                 choose_section();
-                choose_signalisation();
+                choose_signalisation(); //free(signals)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 break;
         }
     }
